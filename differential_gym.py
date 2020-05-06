@@ -126,7 +126,7 @@ class DifferentialDriveGym(gym.Env):
     
     def _reward(self, info):
         info_arr = np.array([info[i] for i in info])
-        reward = info_arr @ np.array([150.0, -0.38, -200.0, 0, 0.01, -0])
+        reward = info_arr @ np.array([150.0, -1.0, -200.0, 0, 0.01, -0])
         return reward
 
     def _obs(self):
@@ -208,10 +208,13 @@ def dwa_control_gym():
     debug gym
     '''
     env = DifferentialDriveGym()
+    print(env.action_space.low)
+    print(env.action_space.high)
     env.reset()
     start = env.state
     state = start.copy()
     goal = env.goal
+    print(np.linalg.norm(goal[:2]-start[:2]))
     env.robot_env.set_dwa(dt = 0.3)
     dwa = env.robot_env.dwa
     fig, ax = plt.subplots()

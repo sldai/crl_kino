@@ -27,5 +27,5 @@ def learn():
     model.save('model')
 
 if __name__ == "__main__":
+    learn()
     visualize()
-    # learn()
