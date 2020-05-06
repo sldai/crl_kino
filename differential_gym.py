@@ -36,6 +36,8 @@ class DifferentialDriveGym(gym.Env):
 
         self.n_step = 0
         self.max_step = 200
+        self.current_time = 0.0
+        self.max_time = 100.0
 
         self.obc_list = self.init_training_envs()
         self.n_case = 0
@@ -95,13 +97,14 @@ class DifferentialDriveGym(gym.Env):
 
 
     def step(self, action):
-        self.n_step += 1
+        
         dt = 1.0/5.0  # 5 Hz
         self.state = self.robot_env.motion_velocity(self.state, action, dt)
+        self.current_time += dt
         obs = self._obs()
         info = self._info()
         reward = self._reward(info)
-        done = info['goal'] or info['collision'] or self.n_step > self.max_step
+        done = info['goal'] or info['collision'] or self.current_time > self.max_time
         return obs, reward, done, info
 
     def _info(self):
@@ -179,7 +182,7 @@ class DifferentialDriveGym(gym.Env):
         self.state = start
         self.goal = goal
 
-        self.n_step = 0
+        self.current_time = 0
         obs = self._obs()
         return obs
 
