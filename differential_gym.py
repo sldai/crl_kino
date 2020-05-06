@@ -170,7 +170,7 @@ class DifferentialDriveGym(gym.Env):
         start = np.zeros(len(self.state_bounds))
         goal = np.zeros(len(self.state_bounds)) 
         while True:
-            # random sample start configuration
+            # random sample start and goal configuration
             start[:3] = np.random.uniform(self.state_bounds[:3, 0], self.state_bounds[:3, 1])
             goal[:3] = np.random.uniform(self.state_bounds[:3, 0], self.state_bounds[:3, 1])
             if self.robot_env.get_clearance(start)>0.1 and self.robot_env.get_clearance(goal)>0.1 and 5.0<np.linalg.norm(start[:2]-goal[:2])<10.0:
