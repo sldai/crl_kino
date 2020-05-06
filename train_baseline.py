@@ -21,7 +21,7 @@ def learn():
     n_cpu = 4
     env = SubprocVecEnv([lambda: DifferentialDriveGym() for i in range(n_cpu)]) 
     total_timesteps = 500000
-    policy_kwargs = dict(net_arch=[300, 300])
+    policy_kwargs = dict(net_arch=[784, 512, 128])
     model = PPO2(MlpPolicy, env, verbose=1, n_steps=128, policy_kwargs=policy_kwargs, tensorboard_log="./no_course_tensorboard/")
     model.learn(total_timesteps=total_timesteps)
     model.save('model')
