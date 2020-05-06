@@ -43,7 +43,7 @@ class RRT:
 
         """
         self.robot_env = robot_env
-        self.robot_env.set_dwa(dt=0.1, v_res=0.02)
+        self.robot_env.set_dwa(dt=0.2, v_res=0.02)
         self.goal_sample_rate = goal_sample_rate
         self.max_iter = max_iter
         self.node_list = []
@@ -108,7 +108,7 @@ class RRT:
             if not env.valid_state_check(state):
                 # collision
                 break
-            if np.linalg.norm(state[:2]-goal[:2]) < 0.3:
+            if np.linalg.norm(state[:2]-goal[:2]) <= 2* env.robot_radius:
                 # reach
                 if n_extend != 0: 
                     self.node_list.append(new_node)
@@ -216,34 +216,34 @@ class RRT:
 def main():
     env = DifferentialDriveEnv(2, -0.3, math.pi, 0.7, math.pi / 3 * 5)
     planner = RRT(env)
-    # obs = np.array([[-10.402568,   -5.5128484],
-    # [ 14.448388,   -4.1362205],
-    # [ 10.003768,   -1.2370133],
-    # [ 11.609167,    0.9119211],
-    # [ -4.9821305,   3.8099794],
-    # [  8.94005,    -4.14619  ],
-    # [-10.45487,     6.000557 ]])
-    # env.set_obs(obs)
-    # start = np.array([13, -7.5, 0, 0, 0.0])
-    # goal = np.array([10, 10, 0, 0, 0.0])
+    obs = np.array([[-10.402568,   -5.5128484],
+    [ 14.448388,   -4.1362205],
+    [ 10.003768,   -1.2370133],
+    [ 11.609167,    0.9119211],
+    [ -4.9821305,   3.8099794],
+    [  8.94005,    -4.14619  ],
+    [-10.45487,     6.000557 ]])
+    env.set_obs(obs)
+    start = np.array([13, -7.5, 0, 0, 0.0])
+    goal = np.array([10, 10, 0, 0, 0.0])
     
 
-    # planner.set_start_and_goal(start, goal)
-    # path = planner.planning()
-    # planner.draw_tree()
+    planner.set_start_and_goal(start, goal)
+    path = planner.planning()
+    planner.draw_tree()
 
-    obc, paths, path_lengths = load_test_dataset_no_cae()
-    plan_time = []
-    for i in range(len(paths)): 
-        env.set_obs(obc[i])
-        for j in range(len(paths[0])):
-            if path_lengths[i,j]>0:
-                start = paths[i,j,0,:]
-                goal = paths[i,j,path_lengths[i,j]-1,:]
-                planner.set_start_and_goal(start, goal)
-                if planner.planning() != None:
-                    plan_time.append(planner.planning_time)
-    np.savetxt('plan_time.csv', np.array(plan_time), delimiter=',')
+    # obc = load_test_dataset_no_cae()
+    # plan_time = []
+    # for i in range(len(paths)): 
+    #     env.set_obs(obc[i])
+    #     for j in range(len(paths[0])):
+    #         if path_lengths[i,j]>0:
+    #             start = paths[i,j,0,:]
+    #             goal = paths[i,j,path_lengths[i,j]-1,:]
+    #             planner.set_start_and_goal(start, goal)
+    #             if planner.planning() != None:
+    #                 plan_time.append(planner.planning_time)
+    # np.savetxt('plan_time.csv', np.array(plan_time), delimiter=',')
 
 
 

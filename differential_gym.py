@@ -18,7 +18,7 @@ class DifferentialDriveGym(gym.Env):
     Custom Environment that follows gym interface
     """
 
-    def __init__(self, robot_env: DifferentialDriveEnv = DifferentialDriveEnv(2.0, -0.1, 2*np.pi, 0.7, np.pi / 3 * 5)):
+    def __init__(self, robot_env: DifferentialDriveEnv = DifferentialDriveEnv(2.0, -0.1, 2*np.pi, 2.0, 2*np.pi)):
         super(DifferentialDriveGym, self).__init__()
         #
         self.robot_env = robot_env
@@ -113,7 +113,7 @@ class DifferentialDriveGym(gym.Env):
                 'step': 1.0
                 }
         info['goal_dis'] = np.linalg.norm(self.state[:2]-self.goal[:2])
-        if info['goal_dis'] <= 0.3:
+        if info['goal_dis'] <= self.robot_env.robot_radius*2:
             info['goal'] = True
 
         info['clearance'] = self.robot_env.get_clearance(self.state)
@@ -168,25 +168,12 @@ class DifferentialDriveGym(gym.Env):
         
         # sample a random start goal configuration
         start = np.zeros(len(self.state_bounds))
+        goal = np.zeros(len(self.state_bounds)) 
         while True:
             # random sample start configuration
-            start = np.zeros(len(self.state_bounds))
-            for i in range(2):
-                start[i] = np.random.uniform(
-                    self.state_bounds[i, 0], self.state_bounds[i, 1])
-            if self.robot_env.get_clearance(start)>0.1:
-                break
-
-        size = 5.0
-        goal = np.zeros(len(self.state_bounds))
-        x_bound = [max(start[0]-size, self.state_bounds[0,0]), min(start[0]+size, self.state_bounds[0,1])]
-        y_bound = [max(start[1]-size, self.state_bounds[1,0]), min(start[1]+size, self.state_bounds[1,1])]
-        while True:
-            # random sample start configuration
-            goal = np.zeros(len(self.state_bounds))
-            goal[0] = np.random.uniform(x_bound[0],x_bound[1])
-            goal[1] = np.random.uniform(y_bound[0],y_bound[1])
-            if self.robot_env.get_clearance(goal)>0.1:
+            start[:3] = np.random.uniform(self.state_bounds[:3, 0], self.state_bounds[:3, 1])
+            goal[:3] = np.random.uniform(self.state_bounds[:3, 0], self.state_bounds[:3, 1])
+            if self.robot_env.get_clearance(start)>0.1 and self.robot_env.get_clearance(goal)>0.1 and 5.0<np.linalg.norm(start[:2]-goal[:2])<10.0:
                 break
         
         self.state = start
@@ -196,12 +183,13 @@ class DifferentialDriveGym(gym.Env):
         obs = self._obs()
         return obs
 
-    def render(self, mode='human'): 
+    def render(self, mode='human', plot_localwindow = True): 
         ax = plt.gca()
         ax.cla() # clear things 
         
         self.robot_env.plot_ob(ax, self.robot_env.obs_list, self.robot_env.obs_size)
-        self.plot_observation()
+        if plot_localwindow:
+            self.plot_observation()
         plt.plot(self.state[0], self.state[1], "xr")
         plt.plot(self.goal[0], self.goal[1], "xb")
         self.robot_env.plot_arrow(*self.state[:3], length=1, width=0.5)
@@ -227,19 +215,20 @@ def dwa_control_gym():
     for i in range(200):
         v, traj = dwa.control(state, goal)
 
-        print(v)
+        # print(v)
         obs, reward, done, info = env.step(v)
-        print(reward)
-        print(obs[:4])
+        # print(reward)
+        # print(obs[:4])
         state = env.state
-        
+        if done: print(done)
         if info['collision']: 
             print('Collision')
             break
         if info['goal']: 
             print('Goal')
             break
-        env.render()
+        
+        env.render(plot_localwindow=False)
     plt.show()
 
 
