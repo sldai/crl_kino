@@ -18,7 +18,7 @@ class DifferentialDriveGym(gym.Env):
     Custom Environment that follows gym interface
     """
 
-    def __init__(self, robot_env: DifferentialDriveEnv = DifferentialDriveEnv(2.0, -0.1, 2*np.pi, 2.0, 2*np.pi)):
+    def __init__(self, robot_env: DifferentialDriveEnv = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)):
         super(DifferentialDriveGym, self).__init__()
         #
         self.robot_env = robot_env

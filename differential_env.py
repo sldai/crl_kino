@@ -255,7 +255,7 @@ def plot_ob(ax, obs_list, obs_size):
 if __name__ == "__main__":
     obc = load_test_dataset_no_cae()
 
-    env = DifferentialDriveEnv(2.0, -0.1, 2*math.pi, 2.0, 2*math.pi)
+    env = DifferentialDriveEnv(1.0, -0.1, math.pi, 1.0, math.pi)
     
     env.set_obs(obc[0])
     env.set_dwa(dt=0.2, to_goal_cost_gain=1.2)
