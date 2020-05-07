@@ -19,6 +19,10 @@ class DifferentialDriveGym(gym.Env):
     """
 
     def __init__(self, robot_env: DifferentialDriveEnv = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)):
+        """
+        :param robot_env: simulation environment
+        :param curriculum: difficulty of env, obs_num specifies #obstacle in env, ori makes the robot heads to the goal at initialization
+        """
         super(DifferentialDriveGym, self).__init__()
         #
         self.robot_env = robot_env
@@ -46,7 +50,7 @@ class DifferentialDriveGym(gym.Env):
         self.obc_list = self.init_training_envs()
         self.n_case = 0
 
-
+        self.curriculum = {'obs_num': 0, 'ori': True}
         self.reset()
 
     def _init_sample_positions(self):
@@ -184,10 +188,14 @@ class DifferentialDriveGym(gym.Env):
         obc = load_test_dataset_no_cae()
         return obc
 
-
+    def set_curriculum(self, **kwargs): 
+        for k, v in kwargs.items():
+            if self.curriculum[k] is not None:
+                self.curriculum[k] = v
     def reset(self):
         ind_obs = np.random.randint(0, len(self.obc_list))
-        self.robot_env.set_obs(self.obc_list[ind_obs])
+        assert 0<=self.curriculum['obs_num']<=len(self.obc_list[ind_obs])
+        self.robot_env.set_obs(self.obc_list[ind_obs][:self.curriculum['obs_num']])
         
         # sample a random start goal configuration
         start = np.zeros(len(self.state_bounds))
@@ -196,6 +204,9 @@ class DifferentialDriveGym(gym.Env):
             # random sample start and goal configuration
             start[:3] = np.random.uniform(self.state_bounds[:3, 0], self.state_bounds[:3, 1])
             goal[:3] = np.random.uniform(self.state_bounds[:3, 0], self.state_bounds[:3, 1])
+            
+            # start point to goal
+            if self.curriculum['ori']: start[2] = normalize_angle(np.arctan2(goal[1]-start[1],goal[0]-start[0]))
             if self.robot_env.get_clearance(start)>0.1 and self.robot_env.get_clearance(goal)>0.1 and 5.0<np.linalg.norm(start[:2]-goal[:2])<10.0:
                 break
         
@@ -216,7 +227,10 @@ class DifferentialDriveGym(gym.Env):
         plt.plot(self.state[0], self.state[1], "xr")
         plt.plot(self.goal[0], self.goal[1], "xb")
         self.robot_env.plot_arrow(*self.state[:3], length=1, width=0.5)
+        
         plt.axis('equal')
+        plt.ylim(-20.0, 20.0)
+        plt.xlim(-30.0, 30.0)
         plt.pause(0.0001)
 
         return np.array([[[1,1,1]]
@@ -228,6 +242,7 @@ def dwa_control_gym():
     debug gym
     '''
     env = DifferentialDriveGym()
+    env.set_curriculum(ori = False,obs_num =7)
     print(env.action_space.shape)
     print(env.action_space.high[0])
     env.reset()

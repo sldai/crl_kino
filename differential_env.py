@@ -108,18 +108,17 @@ class DifferentialDriveEnv(RobotEnv):
     def set_obs_size(self, obs_size): self.obs_size = obs_size
 
     def get_clearance(self, state):
-        dis = np.linalg.norm(self.obs_list - state[:2], axis=1)
-        dis = np.min(dis) - self.obs_size - self.robot_radius
-        # for obs in self.obs_list:
-        #     tmp_dis = np.sqrt(
-        #         (obs[0]-state[0])**2+(obs[1]-state[1])**2) - self.obs_size - self.robot_radius
-        #     if dis > tmp_dis:
-        #         dis = tmp_dis
+        dis = 100
+        if len(self.obs_list) > 0:
+            dis = np.linalg.norm(self.obs_list - state[:2], axis=1)
+            dis = np.min(dis) - self.obs_size - self.robot_radius
         return dis
 
     def valid_point_check(self, point):
-        dis = np.linalg.norm(self.obs_list - point[:2], axis=1)
-        return np.min(dis) - self.obs_size>0
+        state = np.zeros(5)
+        state[:2] = point[:2]
+        dis = self.get_clearance(state) + self.robot_radius
+        return dis>0
 
     def valid_state_check(self, state):
         dis = self.get_clearance(state)
