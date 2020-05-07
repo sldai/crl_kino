@@ -255,26 +255,26 @@ def plot_ob(ax, obs_list, obs_size):
 if __name__ == "__main__":
     obc = load_test_dataset_no_cae()
 
-    env = DifferentialDriveEnv(2.0, -0.1, 2*math.pi, 0.7, math.pi / 3 * 5)
+    env = DifferentialDriveEnv(2.0, -0.1, 2*math.pi, 2.0, 2*math.pi)
     
     env.set_obs(obc[0])
-    env.set_dwa(dt=0.3)
+    env.set_dwa(dt=0.2, to_goal_cost_gain=1.2)
     dwa = env.dwa
     
-    start = np.array([1.66310299e+01, 4.11202216e+00,0,0,0.0])
-    goal = np.array([1.54019751e+01, 1.33907094e+01,0,0,0.0])
+    goal = np.array([1.66310299e+01, 4.11202216e+00,0,0,0.0])
+    start = np.array([1.54019751e+01, 1.33907094e+01,0,0,0.0])
     state = start.copy()
     fig, ax = plt.subplots()
     for i in range(200):
         v, traj = dwa.control(state, goal)
 
         print(v)
-        state = env.motion_velocity(state, v, 0.2)
+        state = env.motion_velocity(state, v, 1.0/5.0)
         
         if not env.valid_state_check(state): 
             print('Collision')
             break
-        if np.linalg.norm(state[:2]-goal[:2])<0.2: 
+        if np.linalg.norm(state[:2]-goal[:2])<.6: 
             print('Goal')
             break
         plt.cla()

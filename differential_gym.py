@@ -27,8 +27,12 @@ class DifferentialDriveGym(gym.Env):
         self.state = np.zeros(len(self.state_bounds))
         self.goal = np.zeros(len(self.state))
 
-        self.action_space = spaces.Box(
+        # actual range of v, w
+        self.v_space = spaces.Box(
             low=self.state_bounds[-2:, 0], high=self.state_bounds[-2:, 1])
+        # output of network, need to be scaled to v_space
+        self.action_space = spaces.Box(
+            low=0, high=1, shape=self.v_space.shape)
 
         self.sample_positions = self._init_sample_positions()
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(
@@ -67,7 +71,7 @@ class DifferentialDriveGym(gym.Env):
         # world sample position
         tmp_wPos = self.T_transform2d(wTb, self.sample_positions)
         local_map = np.zeros(len(self.sample_positions))
-        local_map = [255*self.robot_env.valid_point_check(pos) for pos in tmp_wPos]
+        local_map = [1.0*self.robot_env.valid_point_check(pos) for pos in tmp_wPos]
         # for ind, pos in enumerate(tmp_wPos):
         #     if self.robot_env.valid_point_check(pos):
         #         local_map[ind] = 255
@@ -95,11 +99,27 @@ class DifferentialDriveGym(gym.Env):
         plt.plot(tmp_wPos[ind_free, 0], tmp_wPos[ind_free, 1], '.', c = 'g', markersize = 1)
         plt.plot(tmp_wPos[ind_non_free, 0], tmp_wPos[ind_non_free, 1], '.', c = 'black', markersize = 1)
 
+    def a2v(self, action):
+        '''
+        action space to v space
+        '''
+        v = np.zeros(self.action_space.shape)
+        for i in range(len(action)):
+            v[i] = (action[i]-self.action_space.low[i])/(self.action_space.high[i]-self.action_space.low[i]) * (self.v_space.high[i]-self.v_space.low[i]) + self.v_space.low[i]
+        return v
+    def v2a(self, v):
+        '''
+        v space to action space
+        '''
+        action = np.zeros(self.action_space.shape)
+        for i in range(len(v)):
+            action[i] = (v[i]-self.v_space.low[i])/(self.v_space.high[i]-self.v_space.low[i]) * (self.action_space.high[i]-self.action_space.low[i]) + self.action_space.low[i]
+        return action
 
     def step(self, action):
-        
+        v = self.a2v(action)
         dt = 1.0/5.0  # 5 Hz
-        self.state = self.robot_env.motion_velocity(self.state, action, dt)
+        self.state = self.robot_env.motion_velocity(self.state, v, dt)
         self.current_time += dt
         obs = self._obs()
         info = self._info()
@@ -126,7 +146,7 @@ class DifferentialDriveGym(gym.Env):
     
     def _reward(self, info):
         info_arr = np.array([info[i] for i in info])
-        reward = info_arr @ np.array([150.0, -1.0, -200.0, 0, 0.01, -0])
+        reward = info_arr @ np.array([150.0, -0.48, -200.0, 0, 0.01, -0])
         return reward
 
     def _obs(self):
@@ -208,8 +228,8 @@ def dwa_control_gym():
     debug gym
     '''
     env = DifferentialDriveGym()
-    print(env.action_space.low)
-    print(env.action_space.high)
+    print(env.action_space.shape)
+    print(env.action_space.high[0])
     env.reset()
     start = env.state
     state = start.copy()
@@ -217,12 +237,12 @@ def dwa_control_gym():
     print(np.linalg.norm(goal[:2]-start[:2]))
     env.robot_env.set_dwa(dt = 0.3)
     dwa = env.robot_env.dwa
+    
     fig, ax = plt.subplots()
     for i in range(200):
         v, traj = dwa.control(state, goal)
-
-        # print(v)
-        obs, reward, done, info = env.step(v)
+        print(v)
+        obs, reward, done, info = env.step(env.v2a(v))
         # print(reward)
         # print(obs[:4])
         state = env.state
@@ -234,7 +254,7 @@ def dwa_control_gym():
             print('Goal')
             break
         
-        env.render(plot_localwindow=False)
+        env.render(plot_localwindow=True)
     plt.show()
 
 
