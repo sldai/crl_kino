@@ -134,6 +134,7 @@ class DifferentialDriveGym(gym.Env):
     def _info(self):
         info = {'goal': False,
                 'goal_dis': 0.0,
+                'heading': 0.0,
                 'collision': False,
                 'clearance': 0.0,
                 'speed': self.state[3],
@@ -142,7 +143,7 @@ class DifferentialDriveGym(gym.Env):
         info['goal_dis'] = np.linalg.norm(self.state[:2]-self.goal[:2])
         if info['goal_dis'] <= self.robot_env.robot_radius*2:
             info['goal'] = True
-
+        info['heading'] = np.abs(normalize_angle(np.arctan2(self.state[1]-self.goal[1], self.state[0]-self.goal[0]) - self.state[2]))
         info['clearance'] = self.robot_env.get_clearance(self.state)
         info['collision'] = not self.robot_env.valid_state_check(self.state)
         # info['step'] = self.n_step
@@ -150,7 +151,7 @@ class DifferentialDriveGym(gym.Env):
     
     def _reward(self, info):
         info_arr = np.array([info[i] for i in info])
-        reward = info_arr @ np.array([150.0, -0.48, -200.0, 0, 0.01, -0])
+        reward = info_arr @ np.array([300.0, -0.48, -0.3, -200.0, 0.1, 0.01, -0])
         return reward
 
     def _obs(self):
@@ -242,7 +243,7 @@ def dwa_control_gym():
     debug gym
     '''
     env = DifferentialDriveGym()
-    env.set_curriculum(ori = False,obs_num =7)
+    env.set_curriculum(ori = True,obs_num =0)
     print(env.action_space.shape)
     print(env.action_space.high[0])
     env.reset()
@@ -254,14 +255,16 @@ def dwa_control_gym():
     dwa = env.robot_env.dwa
     
     fig, ax = plt.subplots()
+    rew = 0.0
     for i in range(200):
         v, traj = dwa.control(state, goal)
         print(v)
         obs, reward, done, info = env.step(env.v2a(v))
+        rew += reward
         # print(reward)
         # print(obs[:4])
         state = env.state
-        if done: print(done)
+        if done: print(done, rew)
         if info['collision']: 
             print('Collision')
             break

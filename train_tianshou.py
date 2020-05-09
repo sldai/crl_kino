@@ -112,6 +112,41 @@ def test_ddpg(args=get_args()):
         print(f'Final reward: {result["rew"]}, length: {result["len"]}')
         collector.close()
 
+def test_trained(args=get_args()):
+    torch.set_num_threads(1)  # we just need only one thread for NN
+    env = DifferentialDriveGym()
+    args.state_shape = env.observation_space.shape or env.observation_space.n
+    args.action_shape = env.action_space.shape or env.action_space.n
+    args.max_action = env.action_space.high[0]
 
+    # seed
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+
+    # model
+    actor = Actor(
+        args.layer, args.state_shape, args.action_shape,
+        args.max_action, args.device
+    ).to(args.device)
+    actor_optim = torch.optim.Adam(actor.parameters(), lr=args.actor_lr)
+    critic = Critic(
+        args.layer, args.state_shape, args.action_shape, args.device
+    ).to(args.device)
+    critic_optim = torch.optim.Adam(critic.parameters(), lr=args.critic_lr)
+    policy = DDPGPolicy(
+        actor, actor_optim, critic, critic_optim,
+        args.tau, args.gamma, args.exploration_noise,
+        [env.action_space.low[0], env.action_space.high[0]],
+        reward_normalization=args.rew_norm, ignore_done=True)
+    policy.load_state_dict(torch.load(os.path.join(log_path, 'policy.pth')))
+    if __name__ == '__main__':
+        pprint.pprint(result)
+        # Let's watch its performance!
+        env = DifferentialDriveGym()
+        collector = Collector(policy, env)
+        result = collector.collect(n_episode=1, render=args.render)
+        print(f'Final reward: {result["rew"]}, length: {result["len"]}')
+        collector.close()
 if __name__ == '__main__':
-    test_ddpg()
+    test_trained()
+    # test_ddpg()
