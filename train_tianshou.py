@@ -4,6 +4,7 @@
 @author: daishilong
 @contact: daishilong1236@gmail.com
 '''
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from differential_gym import DifferentialDriveGym
 
 import os
@@ -17,10 +18,9 @@ from torch.utils.tensorboard import SummaryWriter
 from tianshou.env import VectorEnv
 from tianshou.policy import DDPGPolicy
 from tianshou.trainer import offpolicy_trainer
-from tianshou.data import Collector, ReplayBuffer
+from tianshou.data import Collector, ReplayBuffer, Batch
 
 from net import Actor, Critic
-
 
 
 def get_args():
@@ -37,7 +37,7 @@ def get_args():
     parser.add_argument('--step-per-epoch', type=int, default=2400)
     parser.add_argument('--collect-per-step', type=int, default=4)
     parser.add_argument('--batch-size', type=int, default=128)
-    parser.add_argument('--layer', type=list, default=[1024,768,512])
+    parser.add_argument('--layer', type=list, default=[1024, 768, 512])
     parser.add_argument('--training-num', type=int, default=8)
     parser.add_argument('--test-num', type=int, default=100)
     parser.add_argument('--logdir', type=str, default='log')
@@ -112,6 +112,7 @@ def test_ddpg(args=get_args()):
         print(f'Final reward: {result["rew"]}, length: {result["len"]}')
         collector.close()
 
+
 def test_trained(args=get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
     env = DifferentialDriveGym()
@@ -137,16 +138,47 @@ def test_trained(args=get_args()):
         actor, actor_optim, critic, critic_optim,
         args.tau, args.gamma, args.exploration_noise,
         [env.action_space.low[0], env.action_space.high[0]],
-        reward_normalization=args.rew_norm, ignore_done=True)
+        reward_normalization=args.rew_norm, ignore_done=False)
+    log_path = os.path.join(args.logdir, args.task, 'ddpg')
     policy.load_state_dict(torch.load(os.path.join(log_path, 'policy.pth')))
     if __name__ == '__main__':
-        pprint.pprint(result)
         # Let's watch its performance!
         env = DifferentialDriveGym()
+        
+        # obs = env.reset()
+        
+        # env.state[0] = 4.0
+        # env.state[1] = -18.0
+        # env.state[2] = 0.0
+        # env.goal[0] = 10.0
+        # env.goal[1] = -10
+    
+        # obs = env._obs()
+        
+        # images = []
+        # while True:
+        #     env.render(pause=False)
+        #     canvas = FigureCanvas(plt.gcf())
+        #     canvas.draw()
+        #     image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+        #     image = image.reshape(plt.gcf().canvas.get_width_height()[::-1] + (3,))
+        #     images.append(image)
+        #     obs_batch = Batch(obs=obs.reshape((1, -1)), info=None)
+        #     action_batch = policy.forward(obs_batch, deterministic=True)
+        #     action = action_batch.act
+        #     action = action.detach().numpy().flatten()
+        #     print(action)
+
+        #     obs, rewards, done, info = env.step(action)
+        #     if done:
+        #         break
+        # imageio.mimsave('collision_avoid.gif', images, fps=5)
         collector = Collector(policy, env)
-        result = collector.collect(n_episode=1, render=args.render)
+        result = collector.collect(n_episode=2, render=args.render)
         print(f'Final reward: {result["rew"]}, length: {result["len"]}')
         collector.close()
+from matplotlib import pyplot as plt
+import imageio
 if __name__ == '__main__':
     test_trained()
     # test_ddpg()

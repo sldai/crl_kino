@@ -50,7 +50,7 @@ class DifferentialDriveGym(gym.Env):
         self.obc_list = self.init_training_envs()
         self.n_case = 0
 
-        self.curriculum = {'obs_num': 0, 'ori': True}
+        self.curriculum = {'obs_num': 7, 'ori': False}
         self.reset()
 
     def _init_sample_positions(self):
@@ -144,14 +144,14 @@ class DifferentialDriveGym(gym.Env):
         if info['goal_dis'] <= 1.0:
             info['goal'] = True
         info['heading'] = np.abs(normalize_angle(np.arctan2(self.state[1]-self.goal[1], self.state[0]-self.goal[0]) - self.state[2]))
-        info['clearance'] = self.robot_env.get_clearance(self.state)
+        info['clearance'] = min(self.robot_env.get_clearance(self.state), 1.0)
         info['collision'] = not self.robot_env.valid_state_check(self.state)
         # info['step'] = self.n_step
         return info
     
     def _reward(self, info):
         info_arr = np.array([info[i] for i in info])
-        reward = info_arr @ np.array([300.0, -0.48, -1.0, -200.0, 0.1, 0.01, -0])
+        reward = info_arr @ np.array([300.0, -0.48, -1.0, -200.0, 0.1, 1.0, -0])
         return reward
 
     def _obs(self):
@@ -219,7 +219,7 @@ class DifferentialDriveGym(gym.Env):
         obs = self._obs()
         return obs
 
-    def render(self, mode='human', plot_localwindow = True): 
+    def render(self, mode='human', plot_localwindow = True, pause = True): 
         ax = plt.gca()
         ax.cla() # clear things 
         
@@ -233,7 +233,7 @@ class DifferentialDriveGym(gym.Env):
         plt.axis('equal')
         plt.ylim(-20.0, 20.0)
         plt.xlim(-30.0, 30.0)
-        plt.pause(0.0001)
+        if pause: plt.pause(0.0001)
 
         return np.array([[[1,1,1]]
                          ], dtype=np.uint8)
