@@ -141,7 +141,7 @@ class DifferentialDriveGym(gym.Env):
                 'step': 1.0
                 }
         info['goal_dis'] = np.linalg.norm(self.state[:2]-self.goal[:2])
-        if info['goal_dis'] <= self.robot_env.robot_radius*2:
+        if info['goal_dis'] <= 1.0:
             info['goal'] = True
         info['heading'] = np.abs(normalize_angle(np.arctan2(self.state[1]-self.goal[1], self.state[0]-self.goal[0]) - self.state[2]))
         info['clearance'] = self.robot_env.get_clearance(self.state)
@@ -151,7 +151,7 @@ class DifferentialDriveGym(gym.Env):
     
     def _reward(self, info):
         info_arr = np.array([info[i] for i in info])
-        reward = info_arr @ np.array([300.0, -0.48, -0.3, -200.0, 0.1, 0.01, -0])
+        reward = info_arr @ np.array([300.0, -0.48, -1.0, -200.0, 0.1, 0.01, -0])
         return reward
 
     def _obs(self):
@@ -195,6 +195,7 @@ class DifferentialDriveGym(gym.Env):
                 self.curriculum[k] = v
     def reset(self):
         ind_obs = np.random.randint(0, len(self.obc_list))
+        ind_obs = 1
         assert 0<=self.curriculum['obs_num']<=len(self.obc_list[ind_obs])
         self.robot_env.set_obs(self.obc_list[ind_obs][:self.curriculum['obs_num']])
         
@@ -208,7 +209,7 @@ class DifferentialDriveGym(gym.Env):
             
             # start point to goal
             if self.curriculum['ori']: start[2] = normalize_angle(np.arctan2(goal[1]-start[1],goal[0]-start[0]))
-            if self.robot_env.get_clearance(start)>0.1 and self.robot_env.get_clearance(goal)>0.1 and 5.0<np.linalg.norm(start[:2]-goal[:2])<10.0:
+            if self.robot_env.get_clearance(start)>0.5 and self.robot_env.get_clearance(goal)>0.5 and 5.0<np.linalg.norm(start[:2]-goal[:2])<10.0:
                 break
         
         self.state = start
