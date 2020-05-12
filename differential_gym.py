@@ -18,7 +18,8 @@ class DifferentialDriveGym(gym.Env):
     Custom Environment that follows gym interface
     """
 
-    def __init__(self, robot_env: DifferentialDriveEnv = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)):
+    def __init__(self, robot_env: DifferentialDriveEnv = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi), 
+    reward_param = np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -1.0])):
         """
         :param robot_env: simulation environment
         :param curriculum: difficulty of env, obs_num specifies #obstacle in env, ori makes the robot heads to the goal at initialization
@@ -50,6 +51,7 @@ class DifferentialDriveGym(gym.Env):
         self.obc_list = self.init_training_envs()
         self.n_case = 0
 
+        self.reward_param = reward_param.copy()
         self.curriculum = {'obs_num': 7, 'ori': False}
         self.reset()
 
@@ -137,21 +139,21 @@ class DifferentialDriveGym(gym.Env):
                 'heading': 0.0,
                 'collision': False,
                 'clearance': 0.0,
-                'speed': self.state[3],
+                'v': self.state[3],
+                'w': self.state[4],
                 'step': 1.0
                 }
         info['goal_dis'] = np.linalg.norm(self.state[:2]-self.goal[:2])
         if info['goal_dis'] <= 1.0:
             info['goal'] = True
-        info['heading'] = np.abs(normalize_angle(np.arctan2(self.state[1]-self.goal[1], self.state[0]-self.goal[0]) - self.state[2]))
+        info['heading'] = np.abs(normalize_angle(np.arctan2(self.goal[1]-self.state[1], self.goal[0]-self.state[0]) - self.state[2]))
         info['clearance'] = min(self.robot_env.get_clearance(self.state), 1.0)
         info['collision'] = not self.robot_env.valid_state_check(self.state)
-        # info['step'] = self.n_step
         return info
     
     def _reward(self, info):
         info_arr = np.array([info[i] for i in info])
-        reward = info_arr @ np.array([300.0, -0.48, -1.0, -200.0, 0.1, 1.0, -0])
+        reward = info_arr @ self.reward_param
         return reward
 
     def _obs(self):
@@ -197,6 +199,9 @@ class DifferentialDriveGym(gym.Env):
         ind_obs = np.random.randint(0, len(self.obc_list))
         ind_obs = 1
         assert 0<=self.curriculum['obs_num']<=len(self.obc_list[ind_obs])
+        obc_list = self.obc_list[ind_obs][:self.curriculum['obs_num']]
+        obc_list[1,0] = 18
+        obc_list[-1,0] = -13
         self.robot_env.set_obs(self.obc_list[ind_obs][:self.curriculum['obs_num']])
         
         # sample a random start goal configuration
@@ -244,9 +249,11 @@ def dwa_control_gym():
     debug gym
     '''
     env = DifferentialDriveGym()
-    env.set_curriculum(ori = True,obs_num =0)
+    env.set_curriculum(ori = False, obs_num =7)
+
     print(env.action_space.shape)
     print(env.action_space.high[0])
+    print(env.robot_env.obs_list)
     env.reset()
     start = env.state
     state = start.copy()

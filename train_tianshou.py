@@ -46,22 +46,30 @@ def get_args():
     parser.add_argument(
         '--device', type=str,
         default='cuda' if torch.cuda.is_available() else 'cpu')
+    parser.add_argument('--rew_param', type=str, default='normal')
     args = parser.parse_known_args()[0]
     return args
 
+def reward_param(name):
+    if name == 'normal':
+        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -1.0])
+    elif name == 'less_heading':
+        return np.array([300.0, -0.48, -0.5, -200.0, 1.0, 1.0, -1.0, -1.0])
+    elif name == 'more_step':
+        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -2.0])
 
 def test_ddpg(args=get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
-    env = DifferentialDriveGym()
+    env = DifferentialDriveGym(reward_param = reward_param(args.rew_param))
     args.state_shape = env.observation_space.shape or env.observation_space.n
     args.action_shape = env.action_space.shape or env.action_space.n
     args.max_action = env.action_space.high[0]
 
     train_envs = VectorEnv(
-        [lambda: DifferentialDriveGym() for _ in range(args.training_num)])
+        [lambda: DifferentialDriveGym(reward_param = reward_param(args.rew_param)) for _ in range(args.training_num)])
     # test_envs = gym.make(args.task)
     test_envs = VectorEnv(
-        [lambda: DifferentialDriveGym() for _ in range(args.test_num)])
+        [lambda: DifferentialDriveGym(reward_param = reward_param(args.rew_param)) for _ in range(args.test_num)])
     # seed
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -180,5 +188,5 @@ def test_trained(args=get_args()):
 from matplotlib import pyplot as plt
 import imageio
 if __name__ == '__main__':
-    test_trained()
-    # test_ddpg()
+    # test_trained()
+    test_ddpg()
