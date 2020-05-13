@@ -4,6 +4,8 @@
 @author: daishilong
 @contact: daishilong1236@gmail.com
 '''
+from matplotlib import pyplot as plt
+import imageio
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from differential_gym import DifferentialDriveGym
 
@@ -25,6 +27,7 @@ from net import Actor, Critic
 
 def get_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--train', type=bool, default=True, help='train or test')
     parser.add_argument('--task', type=str, default='DifferentialDrive-v0')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--buffer_size', type=int, default=20000)
@@ -50,6 +53,7 @@ def get_args():
     args = parser.parse_known_args()[0]
     return args
 
+
 def reward_param(name):
     if name == 'normal':
         return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -1.0])
@@ -58,18 +62,19 @@ def reward_param(name):
     elif name == 'more_step':
         return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -2.0])
 
+
 def test_ddpg(args=get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
-    env = DifferentialDriveGym(reward_param = reward_param(args.rew_param))
+    env = DifferentialDriveGym(reward_param=reward_param(args.rew_param))
     args.state_shape = env.observation_space.shape or env.observation_space.n
     args.action_shape = env.action_space.shape or env.action_space.n
     args.max_action = env.action_space.high[0]
 
     train_envs = VectorEnv(
-        [lambda: DifferentialDriveGym(reward_param = reward_param(args.rew_param)) for _ in range(args.training_num)])
+        [lambda: DifferentialDriveGym(reward_param=reward_param(args.rew_param)) for _ in range(args.training_num)])
     # test_envs = gym.make(args.task)
     test_envs = VectorEnv(
-        [lambda: DifferentialDriveGym(reward_param = reward_param(args.rew_param)) for _ in range(args.test_num)])
+        [lambda: DifferentialDriveGym(reward_param=reward_param(args.rew_param)) for _ in range(args.test_num)])
     # seed
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -111,14 +116,14 @@ def test_ddpg(args=get_args()):
         args.batch_size, stop_fn=stop_fn, save_fn=save_fn, writer=writer)
     train_collector.close()
     test_collector.close()
-    if __name__ == '__main__':
-        pprint.pprint(result)
-        # Let's watch its performance!
-        env = DifferentialDriveGym()
-        collector = Collector(policy, env)
-        result = collector.collect(n_episode=1, render=args.render)
-        print(f'Final reward: {result["rew"]}, length: {result["len"]}')
-        collector.close()
+    # if __name__ == '__main__':
+    #     pprint.pprint(result)
+    #     # Let's watch its performance!
+    #     env = DifferentialDriveGym()
+    #     collector = Collector(policy, env)
+    #     result = collector.collect(n_episode=1, render=args.render)
+    #     print(f'Final reward: {result["rew"]}, length: {result["len"]}')
+    #     collector.close()
 
 
 def test_trained(args=get_args()):
@@ -152,17 +157,17 @@ def test_trained(args=get_args()):
     if __name__ == '__main__':
         # Let's watch its performance!
         env = DifferentialDriveGym()
-        
+
         # obs = env.reset()
-        
+
         # env.state[0] = 4.0
         # env.state[1] = -18.0
         # env.state[2] = 0.0
         # env.goal[0] = 10.0
         # env.goal[1] = -10
-    
+
         # obs = env._obs()
-        
+
         # images = []
         # while True:
         #     env.render(pause=False)
@@ -185,8 +190,11 @@ def test_trained(args=get_args()):
         result = collector.collect(n_episode=2, render=args.render)
         print(f'Final reward: {result["rew"]}, length: {result["len"]}')
         collector.close()
-from matplotlib import pyplot as plt
-import imageio
+
+
 if __name__ == '__main__':
-    # test_trained()
-    test_ddpg()
+    args = get_args()
+    if args.train:
+        test_ddpg(args)
+    else:
+        test_trained(args)

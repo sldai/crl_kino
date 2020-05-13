@@ -140,7 +140,7 @@ class DifferentialDriveGym(gym.Env):
                 'collision': False,
                 'clearance': 0.0,
                 'v': self.state[3],
-                'w': self.state[4],
+                'w': abs(self.state[4]),
                 'step': 1.0
                 }
         info['goal_dis'] = np.linalg.norm(self.state[:2]-self.goal[:2])
@@ -199,9 +199,9 @@ class DifferentialDriveGym(gym.Env):
         ind_obs = np.random.randint(0, len(self.obc_list))
         ind_obs = 1
         assert 0<=self.curriculum['obs_num']<=len(self.obc_list[ind_obs])
-        obc_list = self.obc_list[ind_obs][:self.curriculum['obs_num']]
-        obc_list[1,0] = 18
-        obc_list[-1,0] = -13
+        # obc_list = self.obc_list[ind_obs][:self.curriculum['obs_num']]
+        # obc_list[1,0] = 18
+        # obc_list[-1,0] = -13
         self.robot_env.set_obs(self.obc_list[ind_obs][:self.curriculum['obs_num']])
         
         # sample a random start goal configuration
