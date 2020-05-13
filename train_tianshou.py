@@ -24,10 +24,19 @@ from tianshou.data import Collector, ReplayBuffer, Batch
 
 from net import Actor, Critic
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--train', type=bool, default=True, help='train or test')
+    parser.add_argument('--train', type=str2bool, default=True, help='train or test')
     parser.add_argument('--task', type=str, default='DifferentialDrive-v0')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--buffer_size', type=int, default=20000)
@@ -45,7 +54,7 @@ def get_args():
     parser.add_argument('--test-num', type=int, default=100)
     parser.add_argument('--logdir', type=str, default='log')
     parser.add_argument('--render', type=float, default=0.)
-    parser.add_argument('--rew-norm', type=bool, default=True)
+    parser.add_argument('--rew-norm', type=str2bool, default=True)
     parser.add_argument(
         '--device', type=str,
         default='cuda' if torch.cuda.is_available() else 'cpu')
@@ -58,7 +67,7 @@ def reward_param(name):
     if name == 'normal':
         return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -1.0])
     elif name == 'less_heading':
-        return np.array([300.0, -0.48, -0.5, -200.0, 1.0, 1.0, -1.0, -1.0])
+        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -1.0])
     elif name == 'more_step':
         return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -2.0])
 

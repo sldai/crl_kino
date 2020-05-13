@@ -189,6 +189,10 @@ class DifferentialDriveGym(gym.Env):
 
     def init_training_envs(self):
         obc = load_test_dataset_no_cae()
+        obc[1,1,0] = 18
+        obc[1,-1,:] = np.array([-15.0, -4.0])
+        obc[1,-2,:] = np.array([0.0, -11.0])
+        obc[1,0,:] = np.array([-10.0, 15.0])
         return obc
 
     def set_curriculum(self, **kwargs): 
