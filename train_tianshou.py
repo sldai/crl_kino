@@ -67,7 +67,7 @@ def reward_param(name):
     if name == 'normal':
         return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -1.0])
     elif name == 'less_heading':
-        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -1.0])
+        return np.array([300.0, -0.48, -0.5, -200.0, 1.0, 1.0, -1.0, -1.0])
     elif name == 'more_step':
         return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -2.0])
 
