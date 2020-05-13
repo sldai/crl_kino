@@ -113,7 +113,7 @@ def test_ddpg(args=get_args()):
     result = offpolicy_trainer(
         policy, train_collector, test_collector, args.epoch,
         args.step_per_epoch, args.collect_per_step, args.test_num,
-        args.batch_size, stop_fn=stop_fn, save_fn=save_fn, writer=writer)
+        args.batch_size, save_fn=save_fn, writer=writer)
     train_collector.close()
     test_collector.close()
     # if __name__ == '__main__':
