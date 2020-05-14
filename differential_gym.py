@@ -20,7 +20,7 @@ class DifferentialDriveGym(gym.Env):
     """
 
     def __init__(self, robot_env: DifferentialDriveEnv = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi), 
-    reward_param = np.array([500.0, -0.7, -2.0, -300.0, 1.0, 1.0, -.5, -2.5]):
+    reward_param = np.array([500.0, -0.7, -2.0, -300.0, 1.0, 1.0, -.5, -2.5])):
         """
         :param robot_env: simulation environment
         :param curriculum: difficulty of env, obs_num specifies #obstacle in env, ori makes the robot heads to the goal at initialization
