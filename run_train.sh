@@ -1,3 +1,3 @@
-python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.3 --epoch 6 --buffer_size 1000000 --step-per-epoch 2500 --train True --task 1 --rew_param 1
-python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.3 --epoch 6 --buffer_size 1000000 --step-per-epoch 2500 --train True --task 2 --rew_param 2
-python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.3 --epoch 6 --buffer_size 1000000 --step-per-epoch 2500 --train True --task 3 --rew_param 3
+python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.1 --epoch 6 --buffer_size 1000000 --step-per-epoch 2500 --train True --task low_noise 
+python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.2 --epoch 6 --buffer_size 1000000 --step-per-epoch 2500 --train True --task mid_noise 
+python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.3 --epoch 6 --buffer_size 1000000 --step-per-epoch 2500 --train True --task high_noise 

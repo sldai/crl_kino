@@ -4,7 +4,7 @@
 @author: daishilong
 @contact: daishilong1236@gmail.com
 '''
-from data_loader import load_test_dataset_no_cae
+
 import numpy as np
 import matplotlib.pyplot as plt
 import gym
@@ -12,6 +12,7 @@ from gym import spaces
 from differential_env import DifferentialDriveEnv, normalize_angle
 import itertools
 import transforms3d.euler as euler
+import pickle
 
 class DifferentialDriveGym(gym.Env):
     """
@@ -19,7 +20,7 @@ class DifferentialDriveGym(gym.Env):
     """
 
     def __init__(self, robot_env: DifferentialDriveEnv = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi), 
-    reward_param = np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -0.0, -2.0])):
+    reward_param = np.array([500.0, -0.7, -2.0, -300.0, 1.0, 1.0, -.5, -2.5]):
         """
         :param robot_env: simulation environment
         :param curriculum: difficulty of env, obs_num specifies #obstacle in env, ori makes the robot heads to the goal at initialization
@@ -188,11 +189,7 @@ class DifferentialDriveGym(gym.Env):
 
 
     def init_training_envs(self):
-        obc = load_test_dataset_no_cae()
-        obc[1,1,0] = 18
-        obc[1,-1,:] = np.array([-15.0, -4.0])
-        obc[1,-2,:] = np.array([0.0, -11.0])
-        obc[1,0,:] = np.array([-10.0, 15.0])
+        obc = pickle.load(open('obc_list.pkl', 'rb'))[:20]
         return obc
 
     def set_curriculum(self, **kwargs): 
@@ -203,9 +200,6 @@ class DifferentialDriveGym(gym.Env):
         ind_obs = np.random.randint(0, len(self.obc_list))
         ind_obs = 1
         assert 0<=self.curriculum['obs_num']<=len(self.obc_list[ind_obs])
-        # obc_list = self.obc_list[ind_obs][:self.curriculum['obs_num']]
-        # obc_list[1,0] = 18
-        # obc_list[-1,0] = -13
         self.robot_env.set_obs(self.obc_list[ind_obs][:self.curriculum['obs_num']])
         
         # sample a random start goal configuration
@@ -218,7 +212,7 @@ class DifferentialDriveGym(gym.Env):
             start[3:] = np.random.uniform(self.state_bounds[3:, 0], self.state_bounds[3:, 1])
             # start point to goal
             if self.curriculum['ori']: start[2] = normalize_angle(np.arctan2(goal[1]-start[1],goal[0]-start[0]))
-            if self.robot_env.get_clearance(start)>1.0 and self.robot_env.get_clearance(goal)>1.0 and 5.0<np.linalg.norm(start[:2]-goal[:2])<10.0:
+            if self.robot_env.get_clearance(start)>0.5 and self.robot_env.get_clearance(goal)>0.5 and 5.0<np.linalg.norm(start[:2]-goal[:2])<10.0:
                 break
         
         self.state = start

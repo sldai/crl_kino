@@ -58,32 +58,23 @@ def get_args():
     parser.add_argument(
         '--device', type=str,
         default='cuda' if torch.cuda.is_available() else 'cpu')
-    parser.add_argument('--rew_param', type=str, default='normal')
     args = parser.parse_known_args()[0]
     return args
 
 
-def reward_param(name):
-    if name == '1':
-        return np.array([400.0, -0.7, -2.0, -300.0, 1.0, 1.0, -.5, -2.5])
-    elif name == '2':
-        return np.array([400.0, -0.8, -2.0, -300.0, 1.0, 1.0, -.5, -2.5])
-    elif name == '3':
-        return np.array([500.0, -0.7, -2.0, -300.0, 1.0, 1.0, -.5, -2.5])
-
 
 def test_ddpg(args=get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
-    env = DifferentialDriveGym(reward_param=reward_param(args.rew_param))
+    env = DifferentialDriveGym()
     args.state_shape = env.observation_space.shape or env.observation_space.n
     args.action_shape = env.action_space.shape or env.action_space.n
     args.max_action = env.action_space.high[0]
 
     train_envs = VectorEnv(
-        [lambda: DifferentialDriveGym(reward_param=reward_param(args.rew_param)) for _ in range(args.training_num)])
+        [lambda: DifferentialDriveGym() for _ in range(args.training_num)])
     # test_envs = gym.make(args.task)
     test_envs = VectorEnv(
-        [lambda: DifferentialDriveGym(reward_param=reward_param(args.rew_param)) for _ in range(args.test_num)])
+        [lambda: DifferentialDriveGym() for _ in range(args.test_num)])
     # seed
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -112,6 +103,11 @@ def test_ddpg(args=get_args()):
     log_path = os.path.join(args.logdir, args.task, 'ddpg')
     writer = SummaryWriter(log_path)
 
+    # if a model exist, continue to train it
+    model_path = os.path.join(args.logdir, '3', 'ddpg', 'policy.pth')
+    if os.path.exists(model_path):
+        policy.load_state_dict(torch.load(model_path))
+
     def save_fn(policy):
         torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
 
@@ -125,14 +121,6 @@ def test_ddpg(args=get_args()):
         args.batch_size, save_fn=save_fn, writer=writer)
     train_collector.close()
     test_collector.close()
-    # if __name__ == '__main__':
-    #     pprint.pprint(result)
-    #     # Let's watch its performance!
-    #     env = DifferentialDriveGym()
-    #     collector = Collector(policy, env)
-    #     result = collector.collect(n_episode=1, render=args.render)
-    #     print(f'Final reward: {result["rew"]}, length: {result["len"]}')
-    #     collector.close()
 
 
 def test_trained(args=get_args()):
