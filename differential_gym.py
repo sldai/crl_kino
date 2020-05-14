@@ -218,7 +218,7 @@ class DifferentialDriveGym(gym.Env):
             start[3:] = np.random.uniform(self.state_bounds[3:, 0], self.state_bounds[3:, 1])
             # start point to goal
             if self.curriculum['ori']: start[2] = normalize_angle(np.arctan2(goal[1]-start[1],goal[0]-start[0]))
-            if self.robot_env.get_clearance(start)>0.5 and self.robot_env.get_clearance(goal)>0.5 and 5.0<np.linalg.norm(start[:2]-goal[:2])<10.0:
+            if self.robot_env.get_clearance(start)>1.0 and self.robot_env.get_clearance(goal)>1.0 and 5.0<np.linalg.norm(start[:2]-goal[:2])<10.0:
                 break
         
         self.state = start
