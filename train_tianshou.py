@@ -51,7 +51,7 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--layer', type=list, default=[1024, 768, 512])
     parser.add_argument('--training-num', type=int, default=8)
-    parser.add_argument('--test-num', type=int, default=100)
+    parser.add_argument('--test-num', type=int, default=10)
     parser.add_argument('--logdir', type=str, default='log')
     parser.add_argument('--render', type=float, default=0.)
     parser.add_argument('--rew-norm', type=str2bool, default=True)
@@ -65,10 +65,10 @@ def get_args():
 
 def reward_param(name):
     if name == 'normal':
-        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -1.0])
+        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -0.0, -2.0])
     elif name == 'less_heading':
-        return np.array([300.0, -0.48, -0.5, -200.0, 1.0, 1.0, -1.0, -1.0])
-    elif name == 'more_step':
+        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -0.5, -2.0])
+    elif name == 'no_heading':
         return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -2.0])
 
 

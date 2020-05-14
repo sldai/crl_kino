@@ -47,7 +47,7 @@ class DifferentialDriveEnv(RobotEnv):
 
         # obstacles
         self.obs_list = np.empty((0, 2))
-        self.obs_size = 2.5
+        self.obs_size = obs_size
 
         self.base_dt = base_dt
 
