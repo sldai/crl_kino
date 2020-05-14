@@ -198,7 +198,6 @@ class DifferentialDriveGym(gym.Env):
                 self.curriculum[k] = v
     def reset(self):
         ind_obs = np.random.randint(0, len(self.obc_list))
-        ind_obs = 1
         assert 0<=self.curriculum['obs_num']<=len(self.obc_list[ind_obs])
         self.robot_env.set_obs(self.obc_list[ind_obs][:self.curriculum['obs_num']])
         
