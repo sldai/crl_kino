@@ -1,3 +1,3 @@
 python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.3 --epoch 4 --buffer_size 1000000 --step-per-epoch 2500 --train True --task normal --rew_param normal
 python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.3 --epoch 4 --buffer_size 1000000 --step-per-epoch 2500 --train True --task less_heading --rew_param less_heading
-python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.3 --epoch 4 --buffer_size 1000000 --step-per-epoch 2500 --train True --task more_step --rew_param more_step
+python train_tianshou.py --actor-lr 1e-6 --critic-lr 1e-5 --exploration-noise 0.3 --epoch 4 --buffer_size 1000000 --step-per-epoch 2500 --train True --task more_step --rew_param no_heading
