@@ -64,12 +64,12 @@ def get_args():
 
 
 def reward_param(name):
-    if name == 'normal':
-        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -0.0, -2.0])
-    elif name == 'less_heading':
-        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -0.5, -2.0])
-    elif name == 'no_heading':
-        return np.array([300.0, -0.48, -1.0, -200.0, 1.0, 1.0, -1.0, -2.0])
+    if name == '1':
+        return np.array([400.0, -0.7, -2.0, -300.0, 1.0, 1.0, -.5, -2.5])
+    elif name == '2':
+        return np.array([400.0, -0.8, -2.0, -300.0, 1.0, 1.0, -.5, -2.5])
+    elif name == '3':
+        return np.array([500.0, -0.7, -2.0, -300.0, 1.0, 1.0, -.5, -2.5])
 
 
 def test_ddpg(args=get_args()):
@@ -196,7 +196,7 @@ def test_trained(args=get_args()):
         #         break
         # imageio.mimsave('collision_avoid.gif', images, fps=5)
         collector = Collector(policy, env)
-        result = collector.collect(n_episode=2, render=args.render)
+        result = collector.collect(n_episode=100, render=args.render)
         print(f'Final reward: {result["rew"]}, length: {result["len"]}')
         collector.close()
 
