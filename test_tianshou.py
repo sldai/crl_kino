@@ -53,7 +53,7 @@ def collect_data(env, policy):
     return info, env.current_time, images
 
 
-def main(args = get_args):
+def main(args = get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
     env = DifferentialDriveGym()
     args.state_shape = env.observation_space.shape or env.observation_space.n
