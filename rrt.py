@@ -17,8 +17,10 @@ import time
 from differential_env import DifferentialDriveEnv
 import seaborn
 import matplotlib.animation as anim
+from abc import ABC, abstractmethod
 
-class RRT:
+
+class RRT(ABC):
     """
     Class for RRT planning
     """
@@ -51,6 +53,7 @@ class RRT:
         self.goal = None
         self.planning_time = 0.0
 
+
     def planning(self):
         """
         rrt path planning
@@ -65,78 +68,83 @@ class RRT:
             while not good_sample:
                 rnd_node = self.sample(self.goal)
                 nearest_ind, cost = self.choose_parent(self.node_list, rnd_node)
-                c = self.robot_env.valid_state_check(rnd_node.state) and cost < 20
+                c = self.robot_env.valid_state_check(rnd_node.state) and 1.0<= cost < 20
                 if c: good_sample = True
             nearest_node = self.node_list[nearest_ind]
 
-            new_node_list = self.steer_dwa(nearest_node, rnd_node)
+            new_node_list = self.steer(nearest_node, rnd_node)
 
             if len(new_node_list)>0:
+                if np.linalg.norm(self.node_list[-1].state[:2]-self.goal.state[:2]) <= 1.0:
+                    break
                 nearest_ind, cost = self.choose_parent(new_node_list, self.goal)
                 if cost<5.0:  
-                    new_node_list = self.steer_dwa(new_node_list[nearest_ind], self.goal)
-                    for n in new_node_list:
-                        print(np.linalg.norm(n.state[:2]-self.goal.state[:2]))
-                    if np.linalg.norm(self.node_list[-1].state[:2]-self.goal.state[:2]) <= 0.3:
-                        path = self.generate_final_course(-1)
+                    new_node_list = self.steer(new_node_list[nearest_ind], self.goal)
+                    if np.linalg.norm(self.node_list[-1].state[:2]-self.goal.state[:2]) <= 1.0:
                         break
+        path = self.generate_final_course(-1)
         toc = time.time()
         self.planning_time = toc-tic
         return path
+
 
     def set_start_and_goal(self, start: np.ndarray, goal: np.ndarray):
         self.start = self.Node(start)
         self.goal = self.Node(goal)
 
-    def steer_dwa(self, from_node, to_node, t_max_extend=10.0, t_tree=5.0):
+    
+
+
+    def steer(self, from_node, to_node, t_max_extend=10.0, t_tree=5.0):
         # using dwa control to steer from_node to to_node
         parent_node = from_node
         new_node = self.Node(from_node.state)
         new_node.parent = parent_node
-        new_node.path.append(new_node.state)
+        # new_node.path.append(new_node.state)
         state = new_node.state
         goal = to_node.state.copy()
 
         dwa = self.robot_env.dwa
         env = self.robot_env
-        dt = dwa.dt
+        dt = 0.2
         n_max_extend = round(t_max_extend/dt)
         n_tree = round(t_tree/dt)
-        n_extend = 0
         new_node_list = []
-        while n_extend <= n_max_extend:
+        
+        for n_extend in range(1, n_max_extend+1):
+            # control with dwa
+            v, traj = dwa.control(state, goal) 
+
+            state = env.motion_velocity(state, v, dt)
+            new_node.state = state
+            new_node.path.append(state)
             if not env.valid_state_check(state):
                 # collision
                 break
-            if np.linalg.norm(state[:2]-goal[:2]) <= 2* env.robot_radius:
+            elif np.linalg.norm(state[:2]-goal[:2]) <= 1.0:
                 # reach
-                if n_extend != 0: 
-                    self.node_list.append(new_node)
-                    new_node_list.append(new_node)
+                self.node_list.append(new_node)
+                new_node_list.append(new_node)
                 break
-            if n_extend % n_tree == 0 and n_extend != 0:
+
+            elif n_extend % n_tree == 0:
                 self.node_list.append(new_node)
                 new_node_list.append(new_node)
                 parent_node = new_node
                 new_node = self.Node(parent_node.state)
                 new_node.parent = parent_node
                 new_node.path.append(new_node.state)
-            v, traj = dwa.control(state, goal)
-            state = env.motion_velocity(state, v, dwa.dt)
-            n_extend += 1
-            new_node.state = state
-            new_node.path.append(state)
-            
+   
         return new_node_list
 
     def generate_final_course(self, goal_ind):
         path = []
         node = self.node_list[goal_ind]
         while node.parent is not None:
-            path.append(node.state.copy())
+            path = node.path + path
             node = node.parent
-        path.append(node.state.copy())
-        path.reverse()
+        path = [node.state] + path 
+        # path.reverse()
         return path
 
     def sample(self, goal):
@@ -205,7 +213,31 @@ class RRT:
                 # plt.pause(2)   
         gif = anim.ArtistAnimation(fig, collection_list, interval=50)
         gif.save('tree.gif', writer = anim.PillowWriter(fps=4))
-        plt.show()  
+        # plt.show()  
+
+    def draw_path(self, path):
+        fig, ax = plt.subplots(figsize=(6,6))
+        collection_list = [] # each entry is a collection
+        ax_ob = self.plot_ob(ax, self.robot_env.obs_list, self.robot_env.obs_size)
+
+        start_mark, = plt.plot(self.start.state[0], self.start.state[1], "or")
+        goal_mark, = plt.plot(self.goal.state[0], self.goal.state[1], "or")
+        plt.axis([self.robot_env.env_bounds[0,0], self.robot_env.env_bounds[0,1], self.robot_env.env_bounds[1,0], self.robot_env.env_bounds[1,1]])
+        plt.axis("equal")
+        plt.grid(True)
+        tmp = []
+        tmp.extend(ax_ob)
+        tmp.extend([start_mark, goal_mark])
+        collection_list.append(tmp)
+
+        for state in path:
+            tmp_ = tmp.copy()
+            robot_marker, = plt.plot(state[0], state[1], "xr")
+            arrow = self.robot_env.plot_arrow(state[0], state[1], state[2], length=0.5, width=0.1)
+            tmp_ += [robot_marker, arrow]
+            collection_list.append(tmp_)
+        gif = anim.ArtistAnimation(fig, collection_list, interval=200)
+        gif.save('trajectory.gif', writer = anim.PillowWriter(fps=5))
         
         
 
@@ -214,7 +246,7 @@ class RRT:
 
 
 def main():
-    env = DifferentialDriveEnv(2, -0.3, math.pi, 0.7, math.pi / 3 * 5)
+    env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
     planner = RRT(env)
     obs = np.array([[-10.402568,   -5.5128484],
     [ 14.448388,   -4.1362205],
@@ -230,6 +262,7 @@ def main():
 
     planner.set_start_and_goal(start, goal)
     path = planner.planning()
+    planner.draw_path(path)
     planner.draw_tree()
 
     # obc = load_test_dataset_no_cae()

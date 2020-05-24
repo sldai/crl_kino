@@ -160,7 +160,7 @@ class DifferentialDriveEnv(RobotEnv):
 
     @staticmethod
     def plot_arrow(x, y, yaw, length=0.5, width=0.1): 
-        plt.arrow(x, y, length * math.cos(yaw), length * math.sin(yaw),
+        return plt.arrow(x, y, length * math.cos(yaw), length * math.sin(yaw),
                 head_length=width, head_width=width, fc='k', ec='k', zorder=0)
 
     @staticmethod

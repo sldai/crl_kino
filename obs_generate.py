@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from differential_env import plot_ob
 import pickle
-def main(case_num=20, obs_num=7, size=2.5, min_gap=3.0, bounds = np.array([[-20.0, 20.0],[-20.0, 20.0]])):
+def main(case_num=10, obs_num=7, size=2.5, min_gap=3.0, bounds = np.array([[-20.0, 20.0],[-20.0, 20.0]])):
     obc_list = np.zeros((case_num, obs_num, 2))
     for i in range(case_num):
         for j in range(obs_num):
@@ -29,8 +29,8 @@ def main(case_num=20, obs_num=7, size=2.5, min_gap=3.0, bounds = np.array([[-20.
         plt.axis('equal')
         plt.ylim(bounds[1])
         # plt.show()
-        plt.savefig('obs_image/'+str(i)+'.jpg')
-    pickle.dump(obc_list, open('obc_list.pkl', 'wb'))
+        # plt.savefig('obs_image/'+str(i)+'.jpg')
+    pickle.dump(obc_list, open('obc_list_test.pkl', 'wb'))
             
 if __name__ == "__main__":
     main()
