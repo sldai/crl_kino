@@ -7,8 +7,8 @@ Now it is still in development, to install it for development:
 ```
 conda create -n crl_kino python=3.6 
 conda activate crl_kino
-git clone
-cd MPNet_RL
+git clone https://github.com/sldai/crl_kino.git
+cd crl_kino
 conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
 pip install -e .
 ```
