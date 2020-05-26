@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: crl-kino
+Version: 0.0.1
+Summary: Compositional reinforcement learning based kinodynamic planning
+Home-page: https://github.com/sldai/MPNet_RL
+Author: sldai
+Author-email: daishilong1236@gmail.com
+License: MIT
+Description: TODO
+Keywords: reinforcement learning rrt planning
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
