@@ -7,6 +7,18 @@ from crl_kino.planner.rrt import RRT
 from crl_kino.planner.rrt_rl import RRT_RL
 from crl_kino.policy.rl_policy import load_RL_policy
 
+import argparse
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--case', type=str, default='rl_rrt', 
+                        help='test different cases: ' +
+                        '<--case env> test simulation class DifferentialDriveEnv'+
+                        '<--case gym> test gym env DifferentialDriveGym'+
+                        '<--case rrt> test kino rrt with dwa steering'+
+                        '<--case rl_rrt> test kino rrt with deep RL')
+    args = parser.parse_known_args()[0]
+    return args
 
 def test_env():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
@@ -135,4 +147,9 @@ def test_rl_rrt():
 
 
 if __name__ == "__main__":
-    obs_generate(dir_path='data/obstacles')
+    args = get_args()
+    print(args)
+    if args.case == 'env': test_env()
+    elif args.case == 'gym': test_gym()
+    elif args.case == 'rrt': test_rrt()
+    elif args.case == 'rl_rrt': test_rl_rrt()

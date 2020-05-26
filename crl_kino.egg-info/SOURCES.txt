@@ -14,9 +14,8 @@ crl_kino/planner/__init__.py
 crl_kino/planner/rrt.py
 crl_kino/planner/rrt_rl.py
 crl_kino/policy/__init__.py
+crl_kino/policy/dwa.py
 crl_kino/policy/net.py
-crl_kino/policy/test_tianshou.py
-crl_kino/policy/train_tianshou.py
+crl_kino/policy/rl_policy.py
 crl_kino/utils/__init__.py
-crl_kino/utils/data_loader.py
-crl_kino/utils/obs_generate.py
+crl_kino/utils/draw.py

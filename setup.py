@@ -41,6 +41,8 @@ setup(
         'tensorboard',
         'torch>=1.4.0',
         'matplotlib>=3.1.0',
-        'tianshou>=0.2.2'
+        'tianshou>=0.2.2',
+        'transforms3d',
+        'seaborn',
     ],
 )

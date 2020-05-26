@@ -6,7 +6,9 @@ Home-page: https://github.com/sldai/MPNet_RL
 Author: sldai
 Author-email: daishilong1236@gmail.com
 License: MIT
-Description: TODO
+Description: Kinodynamic RRT using compositional reinforcement learning
+        
+        
 Keywords: reinforcement learning rrt planning
 Platform: UNKNOWN
 Classifier: License :: OSI Approved :: MIT License
