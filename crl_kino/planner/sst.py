@@ -29,6 +29,12 @@ except ImportError:
     from ompl import control as oc
 from functools import partial
 
+import xml.etree.ElementTree as ET
+
+
+# xml namespace, move it from graphml
+xmlns = ' xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"'
+
 
 class SST(object):
     def __init__(self, robot_env: DifferentialDriveEnv):
@@ -108,49 +114,40 @@ class SST(object):
         self.ss.setStartAndGoalStates(self.start, self.goal, 0.05)
         self.ss.solve(20.0)
         toc = time.time()
+        self.planning_time = toc - tic
         path_matrix = self.ss.getSolutionPath().printAsMatrix()
-        path = np.array([j.split()
+        self.path = np.array([j.split()
                          for j in path_matrix.splitlines()], dtype=float)
-        return path
 
-    def save_planner_data(self, fname='planner_data'):
-        fname = fname+'.graphml'
-        if fname:
-            pd = ob.PlannerData(self.ss.getSpaceInformation())
-            self.ss.getPlannerData(pd)
-            pd.computeEdgeWeights()
-            with open(fname, 'w') as outfile:
-                outfile.write(pd.printGraphML())
-                outfile.close()
+        # get planner data
+        pd = ob.PlannerData(self.ss.getSpaceInformation())
+        self.ss.getPlannerData(pd)
+        pd.computeEdgeWeights()
+        xmlstring = pd.printGraphML()
+        self.planner_data = self.xml2tree(xmlstring)
+        return True
 
-def test_sst():
-    env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
+    # def save_planner_data(self, fname='planner_data'):
+    #     fname = fname+'.graphml'
+    #     if fname:
+    #         pd = ob.PlannerData(self.ss.getSpaceInformation())
+    #         self.ss.getPlannerData(pd)
+    #         pd.computeEdgeWeights()
+    #         with open(fname, 'w') as outfile:
+    #             outfile.write(pd.printGraphML())
+    #             outfile.close()
 
-    obs = np.array([[-10.402568,   -5.5128484],
-                    [14.448388,   -4.1362205],
-                    [10.003768,   -1.2370133],
-                    [11.609167,    0.9119211],
-                    [-4.9821305,   3.8099794],
-                    [8.94005,    -4.14619],
-                    [-10.45487,     6.000557]])
-    env.set_obs(obs)
+    @staticmethod
+    def xml2tree(xmlstring):
+        root = ET.fromstring(xmlstring.replace(xmlns, ''))
+        nodes = np.array([node[0].text.split(',')[:2] 
+                          for node in root.iter('node')], dtype=float)
+        edges_weight = np.array([edge[0].text
+                          for edge in root.iter('edge')], dtype=float)
+        edges = np.array([[edge.attrib['source'].replace('n',''),
+                            edge.attrib['target'].replace('n','')] 
+                            for edge in root.iter('edge')], dtype=int)
+        return {'nodes': nodes, 'edges': edges, 'edges_weight': edges_weight}
 
-    sst = SST(env)
-    start = np.array([13, -7.5, 0, 0, 0.0])
-    goal = np.array([10, 10, 0, 0, 0.0])
+        
 
-    sst.set_start_and_goal(start, goal)
-    path = sst.planning()
-    sst.save_planner_data()
-    print(path)
-    fig, ax = plt.subplots()
-    plot_problem_definition(ax, sst.robot_env.obs_list,
-                            sst.robot_env.obs_size, sst.robot_env.robot_radius,
-                            sst.obRealVector2array(sst.start), sst.obRealVector2array(sst.goal))
-
-    plt.plot(path[:, 0], path[:, 1])
-    plt.show()
-
-
-if __name__ == "__main__":
-    test_sst()

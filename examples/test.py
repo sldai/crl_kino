@@ -6,7 +6,7 @@ from crl_kino.utils.draw import *
 from crl_kino.planner.rrt import RRT
 from crl_kino.planner.rrt_rl import RRT_RL
 from crl_kino.policy.rl_policy import load_RL_policy
-
+from crl_kino.planner.sst import SST
 import argparse
 
 def get_args():
@@ -146,6 +146,36 @@ def test_rl_rrt():
     planner.draw_tree()
 
 
+def test_sst():
+    env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
+
+    obs = np.array([[-10.402568,   -5.5128484],
+                    [14.448388,   -4.1362205],
+                    [10.003768,   -1.2370133],
+                    [11.609167,    0.9119211],
+                    [-4.9821305,   3.8099794],
+                    [8.94005,    -4.14619],
+                    [-10.45487,     6.000557]])
+    env.set_obs(obs)
+
+    sst = SST(env)
+    start = np.array([13, -7.5, 0, 0, 0.0])
+    goal = np.array([10, 10, 0, 0, 0.0])
+
+    sst.set_start_and_goal(start, goal)
+    sst.planning()
+
+    fig, ax = plt.subplots()
+    plot_problem_definition(ax, sst.robot_env.obs_list,
+                            sst.robot_env.obs_size, sst.robot_env.robot_radius,
+                            sst.obRealVector2array(sst.start), sst.obRealVector2array(sst.goal))
+
+    plt.plot(sst.path[:, 0], sst.path[:, 1])
+    planner_data = sst.planner_data
+    for edge in planner_data['edges']:
+        pair = planner_data['nodes'][edge]
+        plt.plot(pair[:,0], pair[:,1])
+    plt.show()
 
 if __name__ == "__main__":
     args = get_args()
@@ -154,3 +184,4 @@ if __name__ == "__main__":
     elif args.case == 'gym': test_gym()
     elif args.case == 'rrt': test_rrt()
     elif args.case == 'rl_rrt': test_rl_rrt()
+    elif args.case == 'sst': test_sst()
