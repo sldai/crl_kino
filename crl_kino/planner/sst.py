@@ -113,6 +113,15 @@ class SST(object):
                          for j in path_matrix.splitlines()], dtype=float)
         return path
 
+    def save_planner_data(self, fname='planner_data'):
+        fname = fname+'.graphml'
+        if fname:
+            pd = ob.PlannerData(self.ss.getSpaceInformation())
+            self.ss.getPlannerData(pd)
+            pd.computeEdgeWeights()
+            with open(fname, 'w') as outfile:
+                outfile.write(pd.printGraphML())
+                outfile.close()
 
 def test_sst():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
@@ -132,11 +141,13 @@ def test_sst():
 
     sst.set_start_and_goal(start, goal)
     path = sst.planning()
+    sst.save_planner_data()
     print(path)
     fig, ax = plt.subplots()
     plot_problem_definition(ax, sst.robot_env.obs_list,
                             sst.robot_env.obs_size, sst.robot_env.robot_radius,
                             sst.obRealVector2array(sst.start), sst.obRealVector2array(sst.goal))
+
     plt.plot(path[:, 0], path[:, 1])
     plt.show()
 
