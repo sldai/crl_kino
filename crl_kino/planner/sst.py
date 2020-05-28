@@ -4,6 +4,7 @@
 @author: daishilong
 @contact: daishilong1236@gmail.com
 '''
+from crl_kino.utils.draw import plot_problem_definition
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -27,6 +28,7 @@ except ImportError:
     from ompl import geometric as og
     from ompl import control as oc
 from functools import partial
+
 
 class SST(object):
     def __init__(self, robot_env: DifferentialDriveEnv):
@@ -55,10 +57,10 @@ class SST(object):
         self.cspace = cspace
         # define a simple setup class
         self.ss = oc.SimpleSetup(cspace)
-        self.ss.setStateValidityChecker(ob.StateValidityCheckerFn( \
+        self.ss.setStateValidityChecker(ob.StateValidityCheckerFn(
             partial(self.isStateValid, self.ss.getSpaceInformation())))
         self.ss.setStatePropagator(oc.StatePropagatorFn(self.propagate))
-        
+
         # set the planner
         si = self.ss.getSpaceInformation()
         planner = oc.SST(si)
@@ -80,22 +82,24 @@ class SST(object):
     def isStateValid(self, spaceInformation, state):
         state_array = self.obRealVector2array(state, len(self.state_bounds))
         return self.robot_env.valid_state_check(state_array) \
-               and spaceInformation.satisfiesBounds(state)
-    
+            and spaceInformation.satisfiesBounds(state)
+
     def propagate(self, start, control, duration, state):
         state_array = self.obRealVector2array(start, len(self.state_bounds))
-        control_array = self.obRealVector2array(control, len(self.control_bounds))
-        state_array = self.robot_env.motion(state_array, control_array, duration)
+        control_array = self.obRealVector2array(
+            control, len(self.control_bounds))
+        state_array = self.robot_env.motion(
+            state_array, control_array, duration)
         for i in range(len(state_array)):
             state[i] = state_array[i]
-    
+
     def set_start_and_goal(self, start: np.ndarray, goal: np.ndarray):
         self.start = ob.State(self.space)
         self.goal = ob.State(self.space)
 
         for i in range(len(self.state_bounds)):
             self.start[i] = start[i]
-            self.goal[i] = goal[i]        
+            self.goal[i] = goal[i]
 
     def planning(self):
         if self.start is None and self.goal is None:
@@ -106,8 +110,10 @@ class SST(object):
         self.ss.solve(20.0)
         toc = time.time()
         path_matrix = self.ss.getSolutionPath().printAsMatrix()
-        path = np.array([j.split() for j in path_matrix.splitlines()], dtype = float)
+        path = np.array([j.split()
+                         for j in path_matrix.splitlines()], dtype=float)
         return path
+
 
 def test_sst():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
@@ -128,7 +134,11 @@ def test_sst():
     sst.set_start_and_goal(start, goal)
     path = sst.planning()
     print(path)
-    plt.plot(path[:,0], path[:,1])
+    fig, ax = plt.subplots()
+    plot_problem_definition(ax, sst.robot_env.obs_list,
+                            sst.robot_env.obs_size, sst.robot_env.robot_radius,
+                            sst.obRealVector2array(sst.start), sst.obRealVector2array(sst.goal))
+    plt.plot(path[:, 0], path[:, 1])
     plt.show()
 
 if __name__ == "__main__":

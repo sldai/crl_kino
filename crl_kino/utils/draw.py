@@ -56,3 +56,4 @@ def plot_problem_definition(ax, obs_list, obs_size, robot_size, start, goal):
     goal_mark = plot_robot(ax, *goal[:3], robot_size, 'b')
     collection += ax_ob + start_mark + goal_mark
     return collection
+
