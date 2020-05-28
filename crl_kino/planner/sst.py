@@ -127,16 +127,6 @@ class SST(object):
         self.planner_data = self.xml2tree(xmlstring)
         return True
 
-    # def save_planner_data(self, fname='planner_data'):
-    #     fname = fname+'.graphml'
-    #     if fname:
-    #         pd = ob.PlannerData(self.ss.getSpaceInformation())
-    #         self.ss.getPlannerData(pd)
-    #         pd.computeEdgeWeights()
-    #         with open(fname, 'w') as outfile:
-    #             outfile.write(pd.printGraphML())
-    #             outfile.close()
-
     @staticmethod
     def xml2tree(xmlstring):
         root = ET.fromstring(xmlstring.replace(xmlns, ''))
@@ -149,5 +139,8 @@ class SST(object):
                             for edge in root.iter('edge')], dtype=int)
         return {'nodes': nodes, 'edges': edges, 'edges_weight': edges_weight}
 
-        
+    def get_planner_data(self):
+        return self.planner_data.copy()
 
+    def get_path(self):
+        return self.path.copy()
