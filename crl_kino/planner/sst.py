@@ -90,8 +90,8 @@ class SST(object):
             state[i] = state_array[i]
     
     def set_start_and_goal(self, start: np.ndarray, goal: np.ndarray):
-        self.start = ob.state(self.space)
-        self.goal = ob.state(self.space)
+        self.start = ob.State(self.space)
+        self.goal = ob.State(self.space)
 
         for i in range(len(self.state_bounds)):
             self.start[i] = start[i]
@@ -105,7 +105,9 @@ class SST(object):
         self.ss.setStartAndGoalStates(self.start, self.goal, 0.05)
         self.ss.solve(20.0)
         toc = time.time()
-        print("Found solution:\n%s" % self.ss.getSolutionPath().printAsMatrix())
+        path_matrix = self.ss.getSolutionPath().printAsMatrix()
+        path = np.array([j.split() for j in path_matrix.splitlines()], dtype = float)
+        return path
 
 def test_sst():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
@@ -124,7 +126,10 @@ def test_sst():
     goal = np.array([10, 10, 0, 0, 0.0])
 
     sst.set_start_and_goal(start, goal)
-    sst.planning()
+    path = sst.planning()
+    print(path)
+    plt.plot(path[:,0], path[:,1])
+    plt.show()
 
 if __name__ == "__main__":
     test_sst()
