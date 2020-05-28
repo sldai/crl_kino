@@ -170,11 +170,13 @@ def test_sst():
                             sst.robot_env.obs_size, sst.robot_env.robot_radius,
                             sst.obRealVector2array(sst.start), sst.obRealVector2array(sst.goal))
 
-    plt.plot(sst.path[:, 0], sst.path[:, 1])
+    
     planner_data = sst.planner_data
     for edge in planner_data['edges']:
         pair = planner_data['nodes'][edge]
-        plt.plot(pair[:,0], pair[:,1])
+        plt.plot(pair[:,0], pair[:,1], '-r', linewidth=0.6)
+
+    plt.plot(sst.path[:, 0], sst.path[:, 1], '-b', linewidth=2.0)
     plt.show()
 
 if __name__ == "__main__":
