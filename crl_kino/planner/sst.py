@@ -28,7 +28,7 @@ except ImportError:
     from ompl import control as oc
 from functools import partial
 
-class sst(object):
+class SST(object):
     def __init__(self, robot_env: DifferentialDriveEnv):
         self.robot_env = robot_env
         bounds = self.robot_env.get_bounds()
@@ -98,6 +98,8 @@ class sst(object):
             self.goal[i] = goal[i]        
 
     def planning(self):
+        if self.start is None and self.goal is None:
+            return False
         self.ss.clear()
         tic = time.time()
         self.ss.setStartAndGoalStates(self.start, self.goal, 0.05)
@@ -105,4 +107,24 @@ class sst(object):
         toc = time.time()
         print("Found solution:\n%s" % self.ss.getSolutionPath().printAsMatrix())
 
+def test_sst():
+    env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
 
+    obs = np.array([[-10.402568,   -5.5128484],
+                    [14.448388,   -4.1362205],
+                    [10.003768,   -1.2370133],
+                    [11.609167,    0.9119211],
+                    [-4.9821305,   3.8099794],
+                    [8.94005,    -4.14619],
+                    [-10.45487,     6.000557]])
+    env.set_obs(obs)
+
+    sst = SST(env)
+    start = np.array([13, -7.5, 0, 0, 0.0])
+    goal = np.array([10, 10, 0, 0, 0.0])
+
+    sst.set_start_and_goal(start, goal)
+    sst.planning()
+
+if __name__ == "__main__":
+    test_sst()
