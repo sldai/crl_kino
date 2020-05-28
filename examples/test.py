@@ -134,7 +134,8 @@ def test_rl_rrt():
     env.set_obs(obs)
 
     policy = load_RL_policy([1024, 768, 512], os.path.join(
-        os.path.dirname(__file__), 'data/log/mid_noise/ddpg/policy.pth'))
+        os.path.dirname(os.path.dirname(__file__))
+        , 'data/log/mid_noise/ddpg/policy.pth'))
     planner = RRT_RL(env, policy)
     start = np.array([13, -7.5, 0, 0, 0.0])
     goal = np.array([10, 10, 0, 0, 0.0])

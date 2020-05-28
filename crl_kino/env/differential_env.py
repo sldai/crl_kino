@@ -52,12 +52,31 @@ class DifferentialDriveEnv(RobotEnv):
 
         self.base_dt = base_dt
 
+    def motion_velocity(self, state, velocity, duration):
+        """
+        Velocity command
 
-    def motion_velocity(self, state, velocity, dt):
-        input_u = np.zeros(2)
-        input_u[0] = (velocity[0] - state[3])/dt
-        input_u[1] = (velocity[1] - state[4])/dt
-        return self.motion(state, input_u, dt)
+        state: array_like
+
+        velocity: array_like
+
+        duration: float, >=self.base_dt
+    
+        """
+        t = 0
+        state = np.array(state)
+        velocity = np.array(velocity)
+        while t < duration:
+            input_u = (velocity[:2] - state[3:5])/self.base_dt
+            state = self.motion_base(state, input_u, self.base_dt)
+            t += self.base_dt
+        return state
+
+    # def motion_velocity(self, state, velocity, dt):
+    #     input_u = np.zeros(2)
+    #     input_u[0] = (velocity[0] - state[3])/dt
+    #     input_u[1] = (velocity[1] - state[4])/dt
+    #     return self.motion(state, input_u, dt)
 
     def motion(self, state, input_u, duration):
         t = 0

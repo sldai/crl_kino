@@ -45,6 +45,7 @@ class RRT(ABC):
         self.goal = None
         self.planning_time = 0.0
         self.path = None
+        self.state_bounds = self.robot_env.get_bounds()['state_bounds']
 
 
     def planning(self):
@@ -60,9 +61,10 @@ class RRT(ABC):
             good_sample = False
             while not good_sample:
                 rnd_node = self.sample(self.goal)
+                if not self.robot_env.valid_state_check(rnd_node.state): 
+                    continue
                 nearest_ind, cost = self.choose_parent(self.node_list, rnd_node)
-                c = self.robot_env.valid_state_check(rnd_node.state) and 1.0<= cost < 20
-                if c: good_sample = True
+                if 1.0<= cost < 20: good_sample = True
             nearest_node = self.node_list[nearest_ind]
 
             new_node_list = self.steer(nearest_node, rnd_node)
@@ -135,12 +137,7 @@ class RRT(ABC):
 
     def sample(self, goal):
         if random.randint(0, 100) > self.goal_sample_rate:
-            bounds = self.robot_env.get_bounds()
-            state_bounds = bounds['state_bounds']
-            state = np.zeros(len(state_bounds))
-            for i in range(len(state_bounds)):
-                state[i] = np.random.uniform(
-                    state_bounds[i, 0], state_bounds[i, 1])
+            state = np.random.uniform(self.state_bounds[:,0], self.state_bounds[:,1])
             rnd = self.Node(state)
 
         else:  # goal point sampling
