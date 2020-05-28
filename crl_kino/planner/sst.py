@@ -72,22 +72,21 @@ class SST(object):
         self.planning_time = 0.0
         self.path = None
 
-    @staticmethod
-    def obRealVector2array(realvector, n):
+    def obRealVector2array(self, realvector):
+        n = len(self.state_bounds)
         array = np.zeros(n)
         for i in range(n):
             array[i] = realvector[i]
         return array
 
     def isStateValid(self, spaceInformation, state):
-        state_array = self.obRealVector2array(state, len(self.state_bounds))
+        state_array = self.obRealVector2array(state)
         return self.robot_env.valid_state_check(state_array) \
             and spaceInformation.satisfiesBounds(state)
 
     def propagate(self, start, control, duration, state):
-        state_array = self.obRealVector2array(start, len(self.state_bounds))
-        control_array = self.obRealVector2array(
-            control, len(self.control_bounds))
+        state_array = self.obRealVector2array(start)
+        control_array = self.obRealVector2array(control)
         state_array = self.robot_env.motion(
             state_array, control_array, duration)
         for i in range(len(state_array)):
@@ -140,6 +139,7 @@ def test_sst():
                             sst.obRealVector2array(sst.start), sst.obRealVector2array(sst.goal))
     plt.plot(path[:, 0], path[:, 1])
     plt.show()
+
 
 if __name__ == "__main__":
     test_sst()
