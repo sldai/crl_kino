@@ -80,6 +80,7 @@ class RRT(ABC):
         path = self.generate_final_course(-1)
         toc = time.time()
         self.planning_time = toc-tic
+        self.path = path
         return path
 
 

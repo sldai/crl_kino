@@ -112,9 +112,6 @@ class SST(object):
         self.goal = ob.State(self.space)
         self.array2obRealVector(start, self.start)
         self.array2obRealVector(goal, self.goal)
-        # for i in range(len(self.state_bounds)):
-        #     self.start[i] = start[i]
-        #     self.goal[i] = goal[i]
 
     
     def check_reach(self, path):
