@@ -6,7 +6,10 @@ from crl_kino.utils.draw import *
 from crl_kino.planner.rrt import RRT
 from crl_kino.planner.rrt_rl import RRT_RL
 from crl_kino.policy.rl_policy import load_RL_policy
-from crl_kino.planner.sst import SST
+try:
+    from crl_kino.planner.sst import SST
+except ImportError:
+    print('ompl not installed, cannot use SST')
 import argparse
 
 def get_args():
@@ -164,7 +167,7 @@ def test_sst():
 
     sst.set_start_and_goal(start, goal)
     find_exact_solution = sst.planning()
-    print(find_exact_solution)
+
     fig, ax = plt.subplots()
     plot_problem_definition(ax, sst.robot_env.obs_list,
                             sst.robot_env.obs_size, sst.robot_env.robot_radius,
@@ -177,6 +180,7 @@ def test_sst():
         plt.plot(pair[:,0], pair[:,1], '-r', linewidth=0.6)
 
     plt.plot(sst.path[:, 0], sst.path[:, 1], '-b', linewidth=2.0)
+    plt.savefig('sst.png')
     plt.show()
 
 if __name__ == "__main__":
