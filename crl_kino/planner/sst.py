@@ -35,6 +35,9 @@ import xml.etree.ElementTree as ET
 # xml namespace, move it from graphml
 xmlns = ' xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"'
 
+EXACT_SOLUTION = 'Exact solution'
+APPROXIMATE_SOLUTION = 'Approximate solution'
+
 
 class SST(object):
     def __init__(self, robot_env: DifferentialDriveEnv):
@@ -85,6 +88,12 @@ class SST(object):
             array[i] = realvector[i]
         return array
 
+    def array2obRealVector(self, array, realvector):
+        n = len(self.state_bounds)
+        for i in range(n):
+            realvector[i] = array[i] 
+        return None
+
     def isStateValid(self, spaceInformation, state):
         state_array = self.obRealVector2array(state)
         return self.robot_env.valid_state_check(state_array) \
@@ -101,23 +110,33 @@ class SST(object):
     def set_start_and_goal(self, start: np.ndarray, goal: np.ndarray):
         self.start = ob.State(self.space)
         self.goal = ob.State(self.space)
+        self.array2obRealVector(start, self.start)
+        self.array2obRealVector(goal, self.goal)
+        # for i in range(len(self.state_bounds)):
+        #     self.start[i] = start[i]
+        #     self.goal[i] = goal[i]
 
-        for i in range(len(self.state_bounds)):
-            self.start[i] = start[i]
-            self.goal[i] = goal[i]
-
-    def planning(self):
+    def planning(self, runtime=50.0):
         if self.start is None and self.goal is None:
             return False
         self.ss.clear()
+
+        dt = 5.0
         tic = time.time()
-        self.ss.setStartAndGoalStates(self.start, self.goal, 0.05)
-        self.ss.solve(20.0)
+        find_exact_solution = False
+        self.ss.setStartAndGoalStates(self.start, self.goal, 1.0)
+        for _ in np.arange(0.0, runtime+dt, dt):
+            self.ss.solve(dt)
+            path_matrix = self.ss.getSolutionPath().printAsMatrix()
+            path = np.array([j.split()
+                         for j in path_matrix.splitlines()], dtype=float)
+            if ((path[-1,0]-self.start[0])**2
+                +(path[-1,1]-self.start[1])**2)**0.5<=1.0:
+                find_exact_solution = True
+                break
         toc = time.time()
         self.planning_time = toc - tic
-        path_matrix = self.ss.getSolutionPath().printAsMatrix()
-        self.path = np.array([j.split()
-                         for j in path_matrix.splitlines()], dtype=float)
+        self.path = path
 
         # get planner data
         pd = ob.PlannerData(self.ss.getSpaceInformation())
@@ -125,7 +144,7 @@ class SST(object):
         pd.computeEdgeWeights()
         xmlstring = pd.printGraphML()
         self.planner_data = self.xml2tree(xmlstring)
-        return True
+        return find_exact_solution
 
     @staticmethod
     def xml2tree(xmlstring):

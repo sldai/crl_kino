@@ -163,8 +163,8 @@ def test_sst():
     goal = np.array([10, 10, 0, 0, 0.0])
 
     sst.set_start_and_goal(start, goal)
-    sst.planning()
-
+    find_exact_solution = sst.planning()
+    print(find_exact_solution)
     fig, ax = plt.subplots()
     plot_problem_definition(ax, sst.robot_env.obs_list,
                             sst.robot_env.obs_size, sst.robot_env.robot_radius,
