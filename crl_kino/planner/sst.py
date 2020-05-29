@@ -116,6 +116,13 @@ class SST(object):
         #     self.start[i] = start[i]
         #     self.goal[i] = goal[i]
 
+    
+    def check_reach(self, path):
+        goal_array = self.obRealVector2array(self.goal)
+        if np.any(np.linalg.norm(path[:,:2]-goal_array[:2], axis=1)<=1.0):
+            return True
+        else: return False
+
     def planning(self, runtime=50.0):
         if self.start is None and self.goal is None:
             return False
@@ -130,8 +137,7 @@ class SST(object):
             path_matrix = self.ss.getSolutionPath().printAsMatrix()
             path = np.array([j.split()
                          for j in path_matrix.splitlines()], dtype=float)
-            if ((path[-1,0]-self.start[0])**2
-                +(path[-1,1]-self.start[1])**2)**0.5<=1.0:
+            if self.check_reach(path):
                 find_exact_solution = True
                 break
         toc = time.time()
