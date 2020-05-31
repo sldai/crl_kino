@@ -69,6 +69,7 @@ class DifferentialDriveGym(gym.Env):
         ba = np.arange(percept_region[2], percept_region[3], sample_reso)
         sample_positions = list(itertools.product(ba, lr))
         self.percept_region = percept_region
+        self.percept_size = (len(ba), len(lr))
         self.sample_reso = sample_reso
         return np.array(sample_positions)
 
@@ -236,4 +237,29 @@ class DifferentialDriveGym(gym.Env):
         return np.array([[[1,1,1]]
                          ], dtype=np.uint8)
 
+
+
+class DifferentialDriveGym2(DifferentialDriveGym):
+    def __init__(self, 
+        robot_env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi), 
+        reward_param = np.array([500.0, -0.5, -2.0, -300.0, 1.0, 1.0, -.5, -2.5]),
+        obc_list = np.zeros((10,7,2))):
+        super().__init__(robot_env=robot_env, reward_param=reward_param, obc_list=obc_list)
+
+        self.observation_space = spaces.Tuple(
+                (spaces.Box(low=-np.inf, high=np.inf, shape=(4,)), 
+                 spaces.Box(low=-np.inf, high=np.inf, shape=self.percept_size)))
+    
+    def _obs(self):
+        wRb = euler.euler2mat(0, 0, self.state[2])[:2, :2]
+        wTb = np.block([[wRb, self.state[:2].reshape((-1, 1))],
+                        [np.zeros((1, 2)), 1]])
+
+        local_map = self.sample_local_map(wTb)
+        local_map = local_map.reshape(self.percept_size)
+        bTw = np.linalg.inv(wTb)
+        b_goal_pos = self.T_transform2d(bTw, self.goal[:2])
+        # goal position in the robot coordinate, robot velocity, local map
+        obs_state = np.block([b_goal_pos, self.state[-2:]])
+        return (obs, local_map)
 
