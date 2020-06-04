@@ -222,7 +222,7 @@ if __name__ == "__main__":
     args = get_args()
     print(args)
     if args.case == 'env': test_env()
-    elif args.case == 'gym': test_gym_tr()
+    elif args.case == 'gym': test_gym()
     elif args.case == 'rrt': test_rrt()
     elif args.case == 'rl_rrt': test_rl_rrt()
     elif args.case == 'sst': test_sst()
