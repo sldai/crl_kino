@@ -69,7 +69,7 @@ class DifferentialDriveGym(gym.Env):
         ba = np.arange(percept_region[2], percept_region[3], sample_reso)
         sample_positions = list(itertools.product(ba, lr))
         self.percept_region = percept_region
-        self.percept_size = (len(ba), len(lr))
+        self.percept_shape = (1, len(ba), len(lr)) # (channel, width, height)
         self.sample_reso = sample_reso
         return np.array(sample_positions)
 
@@ -239,27 +239,73 @@ class DifferentialDriveGym(gym.Env):
 
 
 
-class DifferentialDriveGym2(DifferentialDriveGym):
+class DifferentialDriveGymTrajOpt(DifferentialDriveGym):
     def __init__(self, 
         robot_env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi), 
-        reward_param = np.array([500.0, -0.5, -2.0, -300.0, 1.0, 1.0, -.5, -2.5]),
-        obc_list = np.zeros((10,7,2))):
-        super().__init__(robot_env=robot_env, reward_param=reward_param, obc_list=obc_list)
+        reward_param = np.array([2.0, -0.7, -0.1, -0.7/5, -0.1/5, -1.0]),
+        obc_list = np.zeros((10,0,2))):
+        super().__init__(robot_env, reward_param, obc_list)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(
+            10,))
 
-        self.observation_space = spaces.Tuple(
-                (spaces.Box(low=-np.inf, high=np.inf, shape=(4,)), 
-                 spaces.Box(low=-np.inf, high=np.inf, shape=self.percept_size)))
-    
+    def step(self, action):
+        v = self.a2v(action)
+        dt = 1.0/5.0  # 5 Hz
+        self.state = self.robot_env.motion_velocity(self.state, v, dt)
+        self.current_time += dt
+        obs = self._obs()
+        info = self._info()
+        reward = self._reward(info)
+        done = info['goal'] or self.current_time > self.max_time
+        return obs, reward, done, info
+
+    def _info(self):
+        info = {'goal': False,
+                'goal_dis': 0.0,
+                'dtheta': 0.0,
+                'dv': 0.0,
+                'dw': 0.0,
+                'step': 1.0,
+                }
+        diff = self.state-self.goal
+        diff[2] = normalize_angle(diff[2])
+        diff = np.abs(diff)
+        info['goal_dis'] = np.linalg.norm(self.state[:2]-self.goal[:2])
+        if info['goal_dis']<=1.0:
+
+            if diff[2]<np.pi/3 and diff[3]<0.5 and 0.5*np.pi:
+                info['goal'] = True
+        info['dtheta'], info['dv'], info['dw'] = diff[2:]
+        return info
+
+    # def _reward(self, info):
+    #     diff = self.state-self.goal
+    #     diff[2] = normalize_angle(diff[2])
+    #     diff = np.square(diff)
+    #     reward = self.reward_param[:-1] @ diff + self.reward_param[-1]  
+    #     return reward
+
     def _obs(self):
-        wRb = euler.euler2mat(0, 0, self.state[2])[:2, :2]
-        wTb = np.block([[wRb, self.state[:2].reshape((-1, 1))],
-                        [np.zeros((1, 2)), 1]])
+        obs = np.block([self.state, self.goal])
+        return obs
 
-        local_map = self.sample_local_map(wTb)
-        local_map = local_map.reshape(self.percept_size)
-        bTw = np.linalg.inv(wTb)
-        b_goal_pos = self.T_transform2d(bTw, self.goal[:2])
-        # goal position in the robot coordinate, robot velocity, local map
-        obs_state = np.block([b_goal_pos, self.state[-2:]])
-        return (obs, local_map)
+    def reset(self):
+        # sample a random start goal configuration
+        start = np.zeros(len(self.state_bounds))
+        goal = np.zeros(len(self.state_bounds)) 
+        while True:
+            # random sample start and goal configuration
+            start[:] = np.random.uniform(self.state_bounds[:, 0], self.state_bounds[:, 1])
+            goal[:] = np.random.uniform(self.state_bounds[:, 0], self.state_bounds[:, 1])
+            # start point to goal
+
+            if np.linalg.norm(start[:2]-goal[:2])<=5.0:
+                break
+        
+        self.state = start
+        self.goal = goal
+
+        self.current_time = 0
+        obs = self._obs()
+        return obs
 

@@ -2,15 +2,20 @@ import torch
 import numpy as np
 from torch import nn
 
+
 class Actor(nn.Module):
     def __init__(self, layer, state_shape, action_shape,
                  max_action, device='cpu'):
         """
-        :param list layer: [int, int, ...] network hidden layer
+        Parameters
+        ----------
+        list layer: [int, int, ...] 
+            network hidden layer
         """
 
         super().__init__()
         self.device = device
+        
         self.model = [
             nn.Linear(np.prod(state_shape), layer[0]),
             nn.ReLU(inplace=True)]
