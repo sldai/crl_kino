@@ -7,7 +7,7 @@
 from matplotlib import pyplot as plt
 import imageio
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from differential_gym import DifferentialDriveGym
+from crl_kino.env.differential_gym import DifferentialDriveGym, DifferentialDriveGymTrajOpt  
 
 import os
 import gym
@@ -22,7 +22,7 @@ from tianshou.policy import DDPGPolicy
 from tianshou.trainer import offpolicy_trainer
 from tianshou.data import Collector, ReplayBuffer, Batch
 
-from net import Actor, Critic
+from crl_kino.policy.net import Actor, Critic
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -37,14 +37,14 @@ def str2bool(v):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', type=str2bool, default=True, help='train or test')
-    parser.add_argument('--task', type=str, default='DifferentialDrive-v0')
+    parser.add_argument('--task', type=str, default='DifferentialDrive-tr')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--buffer_size', type=int, default=20000)
     parser.add_argument('--actor-lr', type=float, default=1e-4)
     parser.add_argument('--critic-lr', type=float, default=1e-3)
     parser.add_argument('--gamma', type=float, default=0.99)
     parser.add_argument('--tau', type=float, default=0.005)
-    parser.add_argument('--exploration-noise', type=float, default=0.1)
+    parser.add_argument('--exploration-noise', type=float, default=0.3)
     parser.add_argument('--epoch', type=int, default=20)
     parser.add_argument('--step-per-epoch', type=int, default=2400)
     parser.add_argument('--collect-per-step', type=int, default=4)
@@ -65,16 +65,16 @@ def get_args():
 
 def test_ddpg(args=get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
-    env = DifferentialDriveGym()
+    env = DifferentialDriveGymTrajOpt()
     args.state_shape = env.observation_space.shape or env.observation_space.n
     args.action_shape = env.action_space.shape or env.action_space.n
     args.max_action = env.action_space.high[0]
 
     train_envs = VectorEnv(
-        [lambda: DifferentialDriveGym() for _ in range(args.training_num)])
+        [lambda: DifferentialDriveGymTrajOpt() for _ in range(args.training_num)])
     # test_envs = gym.make(args.task)
     test_envs = VectorEnv(
-        [lambda: DifferentialDriveGym() for _ in range(args.test_num)])
+        [lambda: DifferentialDriveGymTrajOpt() for _ in range(args.test_num)])
     # seed
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -104,9 +104,9 @@ def test_ddpg(args=get_args()):
     writer = SummaryWriter(log_path)
 
     # if a model exist, continue to train it
-    model_path = os.path.join(args.logdir, '3', 'ddpg', 'policy.pth')
-    if os.path.exists(model_path):
-        policy.load_state_dict(torch.load(model_path))
+    # model_path = os.path.join(args.logdir, '3', 'ddpg', 'policy.pth')
+    # if os.path.exists(model_path):
+    #     policy.load_state_dict(torch.load(model_path))
 
     def save_fn(policy):
         torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
@@ -125,7 +125,7 @@ def test_ddpg(args=get_args()):
 
 def test_trained(args=get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
-    env = DifferentialDriveGym()
+    env = DifferentialDriveGymTrajOpt()
     args.state_shape = env.observation_space.shape or env.observation_space.n
     args.action_shape = env.action_space.shape or env.action_space.n
     args.max_action = env.action_space.high[0]
@@ -153,38 +153,9 @@ def test_trained(args=get_args()):
     policy.load_state_dict(torch.load(os.path.join(log_path, 'policy.pth')))
     if __name__ == '__main__':
         # Let's watch its performance!
-        env = DifferentialDriveGym()
-
-        # obs = env.reset()
-
-        # env.state[0] = 4.0
-        # env.state[1] = -18.0
-        # env.state[2] = 0.0
-        # env.goal[0] = 10.0
-        # env.goal[1] = -10
-
-        # obs = env._obs()
-
-        # images = []
-        # while True:
-        #     env.render(pause=False)
-        #     canvas = FigureCanvas(plt.gcf())
-        #     canvas.draw()
-        #     image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
-        #     image = image.reshape(plt.gcf().canvas.get_width_height()[::-1] + (3,))
-        #     images.append(image)
-        #     obs_batch = Batch(obs=obs.reshape((1, -1)), info=None)
-        #     action_batch = policy.forward(obs_batch, deterministic=True)
-        #     action = action_batch.act
-        #     action = action.detach().numpy().flatten()
-        #     print(action)
-
-        #     obs, rewards, done, info = env.step(action)
-        #     if done:
-        #         break
-        # imageio.mimsave('collision_avoid.gif', images, fps=5)
+        env = DifferentialDriveGymTrajOpt()
         collector = Collector(policy, env)
-        result = collector.collect(n_episode=100, render=args.render)
+        result = collector.collect(n_episode=1, render=args.render)
         print(f'Final reward: {result["rew"]}, length: {result["len"]}')
         collector.close()
 

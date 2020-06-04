@@ -1,6 +1,7 @@
 from crl_kino.utils import obs_generate
 import os.path
 from crl_kino.env import DifferentialDriveEnv, DifferentialDriveGym
+from crl_kino.env.differential_gym import DifferentialDriveGymTrajOpt
 from crl_kino.policy.dwa import DWA
 from crl_kino.utils.draw import *
 from crl_kino.planner.rrt import RRT
@@ -102,6 +103,40 @@ def test_gym():
         env.render(plot_localwindow=True)
     plt.show()
 
+def test_gym_tr():
+    '''
+    debug gym
+    '''
+    env = DifferentialDriveGymTrajOpt()
+    env.reset()
+
+    dwa = DWA(env.robot_env)
+    dwa.set_dwa(dt=0.2)
+
+    start = env.state
+    state = start.copy()
+    goal = env.goal
+
+    fig, ax = plt.subplots()
+    rew = 0.0
+    for i in range(200):
+        v, traj = dwa.control(state, goal)
+        obs, reward, done, info = env.step(env.v2a(v))
+        print(env.state, env.goal)
+        rew += reward
+        print(reward)
+        # print(info)
+        # print(obs[:4])
+        state = env.state
+        if done:
+            print(done, rew)
+        if info['goal']:
+            print('Goal')
+            break
+
+        env.render(plot_localwindow=True)
+    plt.show()
+
 
 def test_rrt():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
@@ -187,7 +222,7 @@ if __name__ == "__main__":
     args = get_args()
     print(args)
     if args.case == 'env': test_env()
-    elif args.case == 'gym': test_gym()
+    elif args.case == 'gym': test_gym_tr()
     elif args.case == 'rrt': test_rrt()
     elif args.case == 'rl_rrt': test_rl_rrt()
     elif args.case == 'sst': test_sst()
