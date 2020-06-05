@@ -256,16 +256,16 @@ class DifferentialDriveGym(gym.Env):
                          ], dtype=np.uint8)
 
 
-class DifferentialDriveGymTrajOpt(DifferentialDriveGym):
+class DifferentialDriveGymPrimitive(DifferentialDriveGym):
     def __init__(self,
                  robot_env=DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi),
-                 reward_param=np.array(
-                     [2.0, -0.7, -0.1, -0.7/5, -0.1/5, -1.0]),
+                 reward_param=np.zeros(5),
                  obc_list=np.zeros((10, 0, 2))):
         super().__init__(robot_env, reward_param, obc_list)
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(
-            10,))
-
+            5,))
+        self.max_time = 20.0
+        
     def step(self, action):
         v = self.a2v(action)
         dt = 1.0/5.0  # 5 Hz
@@ -273,56 +273,58 @@ class DifferentialDriveGymTrajOpt(DifferentialDriveGym):
         self.current_time += dt
         obs = self._obs()
         info = self._info()
-        reward = self._reward(info)
-        done = info['goal'] or self.current_time > self.max_time
+        reward = self._reward()
+        done = self.current_time > self.max_time
         return obs, reward, done, info
 
-    def _info(self):
-        info = {'goal': False,
-                'goal_dis': 0.0,
-                'dtheta': 0.0,
-                'dv': 0.0,
-                'dw': 0.0,
-                'step': 1.0,
-                }
-        diff = self.state-self.goal
-        diff[2] = normalize_angle(diff[2])
-        diff = np.abs(diff)
-        info['goal_dis'] = np.linalg.norm(self.state[:2]-self.goal[:2])
-        if info['goal_dis'] <= 1.0 and diff[2] < np.pi/3 and diff[3] < 0.5 and diff[4] < 0.5*np.pi:
-            info['goal'] = True
-        info['dtheta'], info['dv'], info['dw'] = diff[2:]
-        return info
-
-    # def _reward(self, info):
-    #     diff = self.state-self.goal
-    #     diff[2] = normalize_angle(diff[2])
-    #     diff = np.square(diff)
-    #     reward = self.reward_param[:-1] @ diff + self.reward_param[-1]
-    #     return reward
+    def _reward(self):
+        vx = self.state[3] * np.cos(self.state[2])
+        vy = self.state[3] * np.sin(self.state[2])
+        w = self.state[4]
+        reward = vx - 0.2*abs(vy) - 0.1*abs(w)
+        return reward
 
     def _obs(self):
-        obs = np.block([self.state, self.goal])
+        obs = self.state
         return obs
 
     def reset(self):
         # sample a random start goal configuration
-        start = np.zeros(len(self.state_bounds))
-        goal = np.zeros(len(self.state_bounds))
-        while True:
-            # random sample start and goal configuration
-            start[:] = np.random.uniform(
+        start = np.random.uniform(
                 self.state_bounds[:, 0], self.state_bounds[:, 1])
-            goal[:] = np.random.uniform(
-                self.state_bounds[:, 0], self.state_bounds[:, 1])
-            # start point to goal
-
-            if np.linalg.norm(start[:2]-goal[:2]) <= 5.0:
-                break
-
         self.state = start
-        self.goal = goal
-
         self.current_time = 0
         obs = self._obs()
         return obs
+
+class DifferentialDriveGymForward(DifferentialDriveGymPrimitive):
+    def _reward(self):
+        vx = self.state[3] * np.cos(self.state[2])
+        vy = self.state[3] * np.sin(self.state[2])
+        w = self.state[4]
+        reward = vx - 0.2*abs(vy) - 0.1*abs(w)
+        return reward
+
+class DifferentialDriveGymBackward(DifferentialDriveGymPrimitive):
+    def _reward(self):
+        vx = self.state[3] * np.cos(self.state[2])
+        vy = self.state[3] * np.sin(self.state[2])
+        w = self.state[4]
+        reward = -vx - 0.2*abs(vy) - 0.1*abs(w)
+        return reward
+
+class DifferentialDriveGymUpward(DifferentialDriveGymPrimitive):
+    def _reward(self):
+        vx = self.state[3] * np.cos(self.state[2])
+        vy = self.state[3] * np.sin(self.state[2])
+        w = self.state[4]
+        reward = vy - 0.2*abs(vx) - 0.1*abs(w)
+        return reward
+
+class DifferentialDriveGymDownward(DifferentialDriveGymPrimitive):
+    def _reward(self):
+        vx = self.state[3] * np.cos(self.state[2])
+        vy = self.state[3] * np.sin(self.state[2])
+        w = self.state[4]
+        reward = -vy - 0.2*abs(vx) - 0.1*abs(w)
+        return reward
