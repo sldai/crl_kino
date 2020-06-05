@@ -281,7 +281,7 @@ class DifferentialDriveGymPrimitive(DifferentialDriveGym):
         vx = self.state[3] * np.cos(self.state[2])
         vy = self.state[3] * np.sin(self.state[2])
         w = self.state[4]
-        reward = vx - 0.2*abs(vy) - 0.1*abs(w)
+        reward = vx - 0.2*abs(vy) - 1.0*abs(np.tanh(w))
         return reward
 
     def _obs(self):
@@ -302,7 +302,7 @@ class DifferentialDriveGymForward(DifferentialDriveGymPrimitive):
         vx = self.state[3] * np.cos(self.state[2])
         vy = self.state[3] * np.sin(self.state[2])
         w = self.state[4]
-        reward = vx - 0.2*abs(vy) - 0.1*abs(w)
+        reward = vx - 0.5*abs(vy) - 1.0*abs(np.tanh(w))
         return reward
 
 class DifferentialDriveGymBackward(DifferentialDriveGymPrimitive):
@@ -310,7 +310,7 @@ class DifferentialDriveGymBackward(DifferentialDriveGymPrimitive):
         vx = self.state[3] * np.cos(self.state[2])
         vy = self.state[3] * np.sin(self.state[2])
         w = self.state[4]
-        reward = -vx - 0.2*abs(vy) - 0.1*abs(w)
+        reward = -vx - 0.5*abs(vy) - 1.0*abs(np.tanh(w))
         return reward
 
 class DifferentialDriveGymUpward(DifferentialDriveGymPrimitive):
@@ -318,7 +318,7 @@ class DifferentialDriveGymUpward(DifferentialDriveGymPrimitive):
         vx = self.state[3] * np.cos(self.state[2])
         vy = self.state[3] * np.sin(self.state[2])
         w = self.state[4]
-        reward = vy - 0.2*abs(vx) - 0.1*abs(w)
+        reward = vy - 0.5*abs(vx) - 1.0*abs(np.tanh(w))
         return reward
 
 class DifferentialDriveGymDownward(DifferentialDriveGymPrimitive):
@@ -326,5 +326,5 @@ class DifferentialDriveGymDownward(DifferentialDriveGymPrimitive):
         vx = self.state[3] * np.cos(self.state[2])
         vy = self.state[3] * np.sin(self.state[2])
         w = self.state[4]
-        reward = -vy - 0.2*abs(vx) - 0.1*abs(w)
+        reward = -vy - 0.5*abs(vx) - 1.0*abs(np.tanh(w))
         return reward
