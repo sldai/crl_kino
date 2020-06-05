@@ -27,11 +27,11 @@ def load_primitive_policy(env, model_path):
     action_shape = env.action_space.shape or env.action_space.n
     max_action = env.action_space.high[0]
     actor = Actor(
-        [128], state_shape, action_shape,
+        [128, 128], state_shape, action_shape,
         max_action, device
     ).to(device)
     critic = Critic(
-        [128], state_shape, action_shape, device
+        [128, 128], state_shape, action_shape, device
     ).to(device)
     action_range = [env.action_space.low[0], env.action_space.high[0]]
     return load_policy(actor, critic, action_range, model_path)

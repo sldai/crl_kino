@@ -335,10 +335,10 @@ class DifferentialDriveGymDownward(DifferentialDriveGymPrimitive):
 
 ####################### compositional policy #####################
 class DifferentialDriveGymCompose(DifferentialDriveGym):
-    def __init__(self, base_policies):
-        super().__init__()
+    def __init__(self, base_policies, obc_list):
+        super().__init__(obc_list=obc_list)
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(
-            5*2+len(self.sample_positions),))
+            7+len(self.sample_positions)+8,))
         self.action_space = spaces.Box(low=-100, high=100, shape=(4,))
         self.base_policies = base_policies
         
@@ -347,22 +347,22 @@ class DifferentialDriveGymCompose(DifferentialDriveGym):
         weights = np.exp(action-np.min(action)) / np.sum(np.exp(action-np.min(action)))
         obs_proprioceptive = Batch(obs=self.state.reshape((1, -1)), info=None)
 
-        obs = []
-        v = []
+
+        v_list = []
         for k,v_ in enumerate(self.base_policies):
             act_batch = v_(obs_proprioceptive, deterministic=False)
             
             act = weights[k] * act_batch.act.detach().cpu().numpy()[0]
             v_primitive = self.a2v(act)
-            v.append(v_primitive)
-            obs.append(v_primitive)
+            v_list.append(v_primitive)
         
 
-        v = np.sum(np.array(v), axis=0)
+        v = np.sum(np.array(v_list), axis=0)
         dt = 1.0/5.0  # 5 Hz
         self.state = self.robot_env.motion_velocity(self.state, v, dt)
         self.current_time += dt
-        obs = np.block([self._obs(), obs])
+        obs = np.block([self._obs()]+ v_list)
+        print(len(obs))
         info = self._info()
         reward = self._reward(info)
         done = self.current_time > self.max_time
