@@ -264,7 +264,7 @@ class DifferentialDriveGymPrimitive(DifferentialDriveGym):
         super().__init__(robot_env, reward_param, obc_list)
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(
             5,))
-        self.max_time = 20.0
+        self.max_time = 10.0
         
     def step(self, action):
         v = self.a2v(action)
