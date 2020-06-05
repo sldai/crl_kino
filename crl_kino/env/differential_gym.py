@@ -14,11 +14,11 @@ import itertools
 import transforms3d.euler as euler
 import pickle
 from crl_kino.utils.draw import *
-
+from tianshou.data import Batch
 
 class DifferentialDriveGym(gym.Env):
     """
-    Custom Environment that follows gym interface
+    The gym wrapper for DifferentailDriveEnv
     """
 
     def __init__(self,
@@ -256,6 +256,7 @@ class DifferentialDriveGym(gym.Env):
                          ], dtype=np.uint8)
 
 
+################### motion primitives ######################
 class DifferentialDriveGymPrimitive(DifferentialDriveGym):
     def __init__(self,
                  robot_env=DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi),
@@ -328,3 +329,48 @@ class DifferentialDriveGymDownward(DifferentialDriveGymPrimitive):
         w = self.state[4]
         reward = -vy - 0.2*abs(vx) - 0.1*abs(w)
         return reward
+
+
+####################### compositional policy #####################
+class DifferentialDriveGymCompose(DifferentialDriveGym):
+    def __init__(self, base_policies):
+        super().__init__()
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(
+            5*2+len(self.sample_positions),))
+        self.action_space = spaces.Box(low=-100, high=100, shape=(4,))
+        self.base_policies = base_policies
+        
+    def step(self, action):
+        # softmax
+        weights = np.exp(action-np.min(action)) / np.sum(np.exp(action-np.min(action)))
+        obs_proprioceptive = Batch(obs=self.state.reshape((1, -1)), info=None)
+
+        obs = []
+        v = []
+        for k,v_ in enumerate(self.base_policies):
+            act_batch = v_(obs_proprioceptive, deterministic=False)
+            
+            act = weights[k] * act_batch.act.detach().cpu().numpy()[0]
+            v_primitive = self.a2v(act)
+            v.append(v_primitive)
+            obs.append(v_primitive)
+        
+
+        v = np.sum(np.array(v), axis=0)
+        dt = 1.0/5.0  # 5 Hz
+        self.state = self.robot_env.motion_velocity(self.state, v, dt)
+        self.current_time += dt
+        obs = np.block([self._obs(), obs])
+        info = self._info()
+        reward = self._reward(info)
+        done = self.current_time > self.max_time
+        return obs, reward, done, info
+
+    def _obs(self):
+        wRb = euler.euler2mat(0, 0, self.state[2])[:2, :2]
+        wTb = np.block([[wRb, self.state[:2].reshape((-1, 1))],
+                        [np.zeros((1, 2)), 1]])
+
+        local_map = self.sample_local_map(wTb)
+        obs = np.block([self.state, self.goal[:2], local_map])
+        return obs

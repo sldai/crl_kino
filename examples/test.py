@@ -1,12 +1,11 @@
 from crl_kino.utils import obs_generate
 import os.path
 from crl_kino.env import DifferentialDriveEnv, DifferentialDriveGym
-from crl_kino.env.differential_gym import DifferentialDriveGymTrajOpt
 from crl_kino.policy.dwa import DWA
 from crl_kino.utils.draw import *
 from crl_kino.planner.rrt import RRT
 from crl_kino.planner.rrt_rl import RRT_RL
-from crl_kino.policy.rl_policy import load_RL_policy
+from crl_kino.policy.rl_policy import load_end2end_policy
 try:
     from crl_kino.planner.sst import SST
 except ImportError:
@@ -161,7 +160,6 @@ def test_rrt():
 
 def test_rl_rrt():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
-
     obs = np.array([[-10.402568,   -5.5128484],
                     [14.448388,   -4.1362205],
                     [10.003768,   -1.2370133],
@@ -171,7 +169,7 @@ def test_rl_rrt():
                     [-10.45487,     6.000557]])
     env.set_obs(obs)
 
-    policy = load_RL_policy([1024, 768, 512], os.path.join(
+    policy = load_end2end_policy(DifferentialDriveGym(), os.path.join(
         os.path.dirname(os.path.dirname(__file__))
         , 'data/log/mid_noise/ddpg/policy.pth'))
     planner = RRT_RL(env, policy)
