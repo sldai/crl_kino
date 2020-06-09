@@ -164,17 +164,17 @@ def test_rl_rrt():
                     [8.94005,    -4.14619],
                     [-10.45487,     6.000557]])
     env.set_obs(obs)
-
-    policy = load_end2end_policy(DifferentialDriveGym(), os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), 'data/log/mid_noise/ddpg/policy.pth'))
+    model_path =os.path.dirname(__file__)+'/../data/log/end2end/ddpg/policy.pth'
+    policy = load_policy(DifferentialDriveGym(), [512,512,512], model_path)
     planner = RRT_RL(env, policy)
     start = np.array([13, -7.5, 0, 0, 0.0])
     goal = np.array([10, 10, 0, 0, 0.0])
 
     planner.set_start_and_goal(start, goal)
     path = planner.planning()
-    planner.draw_path(path)
-    planner.draw_tree()
+    draw_path(env, start, goal, path)
+    draw_tree(env, start, goal, planner.node_list)
+    # planner.draw_tree()
 
 
 def test_sst():

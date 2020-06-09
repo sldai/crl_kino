@@ -24,7 +24,7 @@ class DifferentialDriveGym(gym.Env):
     def __init__(self,
                  robot_env=DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi),
                  reward_param=np.array(
-                     [500.0, -0.5, -2.0, -300.0, 1.0, 1.0, -.5, -2.5]),
+                     [50.0, -0.5, -2.0, -30.0, 1.0, 1.0, -.5, -2.5]),
                  obc_list=np.zeros((10, 7, 2))):
         """
         :param robot_env: simulation environment
@@ -215,16 +215,21 @@ class DifferentialDriveGym(gym.Env):
         goal = np.zeros(len(self.state_bounds))
         while True:
             # random sample start and goal configuration
+
+            # sample a valid state
             start[:] = np.random.uniform(
                 self.state_bounds[:, 0], self.state_bounds[:, 1])
             if self.robot_env.get_clearance(start) <= 0.5:
                 continue
-            r = np.random.uniform(2.0, 10.0)
-            theta = np.random.uniform(-np.pi, np.pi)
-            goal[0] = np.clip(start[0] + r*np.cos(theta), *self.state_bounds[0,:])
-            goal[1] = np.clip(start[1] + r*np.sin(theta), *self.state_bounds[1,:])
-            if self.robot_env.get_clearance(goal) <= 0.5:
-                continue
+
+            # sample a valid goal
+            for _ in range(5):
+                r = np.random.uniform(2.0, 10.0)
+                theta = np.random.uniform(-np.pi, np.pi)
+                goal[0] = np.clip(start[0] + r*np.cos(theta), *self.state_bounds[0,:])
+                goal[1] = np.clip(start[1] + r*np.sin(theta), *self.state_bounds[1,:])
+                if self.robot_env.get_clearance(goal) >= 0.5:
+                    break
 
             # start point to goal
             if self.curriculum['ori']:
