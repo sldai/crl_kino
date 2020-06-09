@@ -41,8 +41,7 @@ class DifferentialDriveGym(gym.Env):
         self.v_space = spaces.Box(
             low=self.state_bounds[-2:, 0], high=self.state_bounds[-2:, 1])
         # output of network, need to be scaled to v_space
-        self.action_space = spaces.Box(
-            low=0, high=1, shape=self.v_space.shape)
+        self.action_space = self.v_space
 
         self.sample_positions = self._init_sample_positions()
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(
@@ -58,7 +57,7 @@ class DifferentialDriveGym(gym.Env):
 
         self.reward_param = reward_param.copy()
         self.curriculum = {'obs_num': 7, 'ori': False}
-        self.reset()
+        # self.reset()
 
     def _init_sample_positions(self):
         """
@@ -136,7 +135,7 @@ class DifferentialDriveGym(gym.Env):
         return action
 
     def step(self, action):
-        v = self.a2v(action)
+        v = action
         dt = 1.0/5.0  # 5 Hz
         self.state = self.robot_env.motion_velocity(self.state, v, dt)
         self.current_time += dt
@@ -216,17 +215,22 @@ class DifferentialDriveGym(gym.Env):
         goal = np.zeros(len(self.state_bounds))
         while True:
             # random sample start and goal configuration
-            start[:3] = np.random.uniform(
-                self.state_bounds[:3, 0], self.state_bounds[:3, 1])
-            goal[:3] = np.random.uniform(
-                self.state_bounds[:3, 0], self.state_bounds[:3, 1])
-            start[3:] = np.random.uniform(
-                self.state_bounds[3:, 0], self.state_bounds[3:, 1])
+            start[:] = np.random.uniform(
+                self.state_bounds[:, 0], self.state_bounds[:, 1])
+            if self.robot_env.get_clearance(start) <= 0.5:
+                continue
+            r = np.random.uniform(2.0, 10.0)
+            theta = np.random.uniform(-np.pi, np.pi)
+            goal[0] = np.clip(start[0] + r*np.cos(theta), *self.state_bounds[0,:])
+            goal[1] = np.clip(start[1] + r*np.sin(theta), *self.state_bounds[1,:])
+            if self.robot_env.get_clearance(goal) <= 0.5:
+                continue
+
             # start point to goal
             if self.curriculum['ori']:
                 start[2] = normalize_angle(np.arctan2(
                     goal[1]-start[1], goal[0]-start[0]))
-            if self.robot_env.get_clearance(start) > 0.5 and self.robot_env.get_clearance(goal) > 0.5 and 5.0 < np.linalg.norm(start[:2]-goal[:2]) < 10.0:
+            if self.robot_env.get_clearance(start) > 0.5 and self.robot_env.get_clearance(goal) > 0.5 and 2.0 < np.linalg.norm(start[:2]-goal[:2]) < 10.0:
                 break
 
         self.state = start
@@ -264,11 +268,11 @@ class DifferentialDriveGymPrimitive(DifferentialDriveGym):
                  obc_list=np.zeros((10, 0, 2))):
         super().__init__(robot_env, reward_param, obc_list)
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(
-            5,))
+            3,))
         self.max_time = 10.0
         
     def step(self, action):
-        v = self.a2v(action)
+        v = action
         dt = 1.0/5.0  # 5 Hz
         self.state = self.robot_env.motion_velocity(self.state, v, dt)
         self.current_time += dt
@@ -286,7 +290,7 @@ class DifferentialDriveGymPrimitive(DifferentialDriveGym):
         return reward
 
     def _obs(self):
-        obs = self.state
+        obs = self.state[2:]
         return obs
 
     def reset(self):
@@ -338,34 +342,39 @@ class DifferentialDriveGymCompose(DifferentialDriveGym):
     def __init__(self, base_policies, obc_list):
         super().__init__(obc_list=obc_list)
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(
-            7+len(self.sample_positions)+8,))
-        self.action_space = spaces.Box(low=-100, high=100, shape=(4,))
+            5+len(self.sample_positions)+8,))
+        self.action_space = spaces.Box(low=0.0, high=1.0, shape=(len(base_policies),))
         self.base_policies = base_policies
         
-    def step(self, action):
-        # softmax
-        weights = np.exp(action-np.min(action)) / np.sum(np.exp(action-np.min(action)))
-        obs_proprioceptive = Batch(obs=self.state.reshape((1, -1)), info=None)
-
+        
+    def primitives(self):
+        obs_proprioceptive = Batch(obs=self.state[2:].reshape((1, -1)), info=None)
 
         v_list = []
         for k,v_ in enumerate(self.base_policies):
-            act_batch = v_(obs_proprioceptive, deterministic=False)
-            
-            act = weights[k] * act_batch.act.detach().cpu().numpy()[0]
-            v_primitive = self.a2v(act)
+            act_batch = v_(obs_proprioceptive, eps=0.05)  
+            act = act_batch.act.detach().cpu().numpy()[0]           
+            v_primitive = act
+            assert len(v_primitive)==2
             v_list.append(v_primitive)
+        return v_list
         
+    def step(self, action):
+        action /= np.sum(action)
+        assert abs(np.sum(action) - 1.0) < 1e-5,\
+            'the summation of weights'+str(np.sum(action))+'does not equal to 1'
+        weights = action
+        v_list = self.primitives()
 
-        v = np.sum(np.array(v_list), axis=0)
+        v = np.array(v_list).T @ weights
         dt = 1.0/5.0  # 5 Hz
+
         self.state = self.robot_env.motion_velocity(self.state, v, dt)
         self.current_time += dt
-        obs = np.block([self._obs()]+ v_list)
-        print(len(obs))
+        obs = self._obs()
         info = self._info()
         reward = self._reward(info)
-        done = self.current_time > self.max_time
+        done = info['goal'] or info['collision'] or self.current_time > self.max_time
         return obs, reward, done, info
 
     def _obs(self):
@@ -374,5 +383,6 @@ class DifferentialDriveGymCompose(DifferentialDriveGym):
                         [np.zeros((1, 2)), 1]])
 
         local_map = self.sample_local_map(wTb)
-        obs = np.block([self.state, self.goal[:2], local_map])
+        obs = np.block([self.state[2:], self.goal[:2]-self.state[:2], local_map]+self.primitives())
         return obs
+

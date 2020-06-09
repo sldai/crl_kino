@@ -1,3 +1,4 @@
+from crl_kino.policy.rl_policy import load_policy, policy_forward
 from crl_kino.utils import obs_generate
 import os.path
 from crl_kino.env import DifferentialDriveEnv, DifferentialDriveGym
@@ -5,23 +6,25 @@ from crl_kino.policy.dwa import DWA
 from crl_kino.utils.draw import *
 from crl_kino.planner.rrt import RRT
 from crl_kino.planner.rrt_rl import RRT_RL
-from crl_kino.policy.rl_policy import load_end2end_policy
+
 try:
     from crl_kino.planner.sst import SST
 except ImportError:
     print('ompl not installed, cannot use SST')
 import argparse
 
+
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--case', type=str, default='rl_rrt', 
+    parser.add_argument('--case', type=str, default='rl_rrt',
                         help='test different cases: ' +
-                        '<--case env> test simulation class DifferentialDriveEnv'+
-                        '<--case gym> test gym env DifferentialDriveGym'+
-                        '<--case rrt> test kino rrt with dwa steering'+
+                        '<--case env> test simulation class DifferentialDriveEnv' +
+                        '<--case gym> test gym env DifferentialDriveGym' +
+                        '<--case rrt> test kino rrt with dwa steering' +
                         '<--case rl_rrt> test kino rrt with deep RL')
     args = parser.parse_known_args()[0]
     return args
+
 
 def test_env():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
@@ -69,7 +72,6 @@ def test_gym():
     debug gym
     '''
     env = DifferentialDriveGym()
-    env.set_curriculum(ori=False, obs_num=7)
     env.reset()
 
     dwa = DWA(env.robot_env)
@@ -84,7 +86,7 @@ def test_gym():
     for i in range(200):
         v, traj = dwa.control(state, goal)
         print(v)
-        obs, reward, done, info = env.step(env.v2a(v))
+        obs, reward, done, info = env.step(v)
         rew += reward
         print(reward)
         # print(info)
@@ -102,39 +104,33 @@ def test_gym():
         env.render(plot_localwindow=True)
     plt.show()
 
-def test_gym_tr():
-    '''
-    debug gym
-    '''
-    env = DifferentialDriveGymTrajOpt()
-    env.reset()
 
-    dwa = DWA(env.robot_env)
-    dwa.set_dwa(dt=0.2)
+def test_policy():
+    # torch.set_num_threads(1)  # we just need only one thread for NN
+    model_path =os.path.dirname(__file__)+'/../data/log/end2end/ddpg/policy.pth'
+  
+    env = DifferentialDriveGym()
+    obstacles = np.array([[-10.402568,   -5.5128484],
+                          [14.448388,   -4.1362205],
+                          [10.003768,   -1.2370133],
+                          [11.609167,    0.9119211],
+                          [-4.9821305,   3.8099794],
+                          [8.94005,    -4.14619],
+                          [-10.45487,     6.000557]])
 
-    start = env.state
-    state = start.copy()
-    goal = env.goal
+    env.obc_list = [obstacles]
+    policy = load_policy(env, [512, 512, 512], model_path)
 
-    fig, ax = plt.subplots()
-    rew = 0.0
-    for i in range(200):
-        v, traj = dwa.control(state, goal)
-        obs, reward, done, info = env.step(env.v2a(v))
-        print(env.state, env.goal)
-        rew += reward
-        print(reward)
-        # print(info)
-        # print(obs[:4])
-        state = env.state
+    obs = env.reset()
+    env.robot_env.set_obs(obstacles)
+
+    while True:
+        action = policy_forward(policy, obs, eps=0.05)
+        print(action)
+        obs, reward, done, info = env.step(action[0])
+        env.render()
         if done:
-            print(done, rew)
-        if info['goal']:
-            print('Goal')
             break
-
-        env.render(plot_localwindow=True)
-    plt.show()
 
 
 def test_rrt():
@@ -170,8 +166,7 @@ def test_rl_rrt():
     env.set_obs(obs)
 
     policy = load_end2end_policy(DifferentialDriveGym(), os.path.join(
-        os.path.dirname(os.path.dirname(__file__))
-        , 'data/log/mid_noise/ddpg/policy.pth'))
+        os.path.dirname(os.path.dirname(__file__)), 'data/log/mid_noise/ddpg/policy.pth'))
     planner = RRT_RL(env, policy)
     start = np.array([13, -7.5, 0, 0, 0.0])
     goal = np.array([10, 10, 0, 0, 0.0])
@@ -206,21 +201,28 @@ def test_sst():
                             sst.robot_env.obs_size, sst.robot_env.robot_radius,
                             sst.obRealVector2array(sst.start), sst.obRealVector2array(sst.goal))
 
-    
     planner_data = sst.planner_data
     for edge in planner_data['edges']:
         pair = planner_data['nodes'][edge]
-        plt.plot(pair[:,0], pair[:,1], '-r', linewidth=0.6)
+        plt.plot(pair[:, 0], pair[:, 1], '-r', linewidth=0.6)
 
     plt.plot(sst.path[:, 0], sst.path[:, 1], '-b', linewidth=2.0)
     plt.savefig('sst.png')
     plt.show()
 
+
 if __name__ == "__main__":
     args = get_args()
     print(args)
-    if args.case == 'env': test_env()
-    elif args.case == 'gym': test_gym()
-    elif args.case == 'rrt': test_rrt()
-    elif args.case == 'rl_rrt': test_rl_rrt()
-    elif args.case == 'sst': test_sst()
+    if args.case == 'env':
+        test_env()
+    elif args.case == 'gym':
+        test_gym()
+    elif args.case == 'policy':
+        test_policy()
+    elif args.case == 'rrt':
+        test_rrt()
+    elif args.case == 'rl_rrt':
+        test_rl_rrt()
+    elif args.case == 'sst':
+        test_sst()

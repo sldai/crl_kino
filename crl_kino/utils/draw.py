@@ -57,3 +57,19 @@ def plot_problem_definition(ax, obs_list, obs_size, robot_size, start, goal):
     collection += ax_ob + start_mark + goal_mark
     return collection
 
+def draw_path(robot_env, start, goal, path, fname='rrt_path'):
+    fig, ax = plt.subplots(figsize=(6,6))
+    plt.axis([robot_env.env_bounds[0,0], robot_env.env_bounds[0,1], robot_env.env_bounds[1,0], robot_env.env_bounds[1,1]])
+    plt.axis("equal")
+    plt.grid(True)
+    collection_list = [] # each entry is a collection
+    tmp = plot_problem_definition(ax, robot_env.obs_list, robot_env.obs_size, robot_env.robot_radius, start, goal)
+    collection_list.append(tmp)
+
+    for state in path:
+        tmp_ = tmp.copy()
+        robot_marker = plot_robot(ax, *state[:3], robot_env.robot_radius, 'r')
+        tmp_ += robot_marker
+        collection_list.append(tmp_)
+    gif = anim.ArtistAnimation(fig, collection_list, interval=200)
+    gif.save(fname+'.gif', writer = anim.PillowWriter(fps=5))
