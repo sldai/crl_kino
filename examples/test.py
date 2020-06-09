@@ -107,7 +107,7 @@ def test_gym():
 
 def test_policy():
     # torch.set_num_threads(1)  # we just need only one thread for NN
-    model_path =os.path.dirname(__file__)+'/../data/log/end2end/ddpg/policy.pth'
+    model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
   
     env = DifferentialDriveGym()
     obstacles = np.array([[-10.402568,   -5.5128484],
@@ -164,7 +164,7 @@ def test_rl_rrt():
                     [8.94005,    -4.14619],
                     [-10.45487,     6.000557]])
     env.set_obs(obs)
-    model_path =os.path.dirname(__file__)+'/../data/log/end2end/ddpg/policy.pth'
+    model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
     policy = load_policy(DifferentialDriveGym(), [512,512,512], model_path)
     planner = RRT_RL(env, policy)
     start = np.array([13, -7.5, 0, 0, 0.0])
