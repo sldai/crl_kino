@@ -113,21 +113,17 @@ def test_policy():
     # torch.set_num_threads(1)  # we just need only one thread for NN
     model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
   
-    env = DifferentialDriveGym()
-    obstacles = np.array([[-10.402568,   -5.5128484],
-                          [14.448388,   -4.1362205],
-                          [10.003768,   -1.2370133],
-                          [11.609167,    0.9119211],
-                          [-4.9821305,   3.8099794],
-                          [8.94005,    -4.14619],
-                          [-10.45487,     6.000557]])
+    obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[:1]
 
-    env.obc_list = [obstacles]
+
+    env = DifferentialDriveGym(obs_list_list=obs_list)
+    env.reset()
+
     policy = load_policy(env, [512, 512, 512], model_path)
 
     obs = env.reset()
-    env.robot_env.set_obs(obstacles)
 
+    fig, ax = plt.subplots()
     while True:
         action = policy_forward(policy, obs, eps=0.05)
         print(action)
