@@ -12,7 +12,7 @@ try:
 except ImportError:
     print('ompl not installed, cannot use SST')
 import argparse
-
+import pickle
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -30,19 +30,15 @@ def test_env():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
     dwa = DWA(env)
     dwa.set_dwa(dt=0.2, to_goal_cost_gain=1.2)
-    obs = np.array([[-10.402568,   -5.5128484],
-                    [14.448388,   -4.1362205],
-                    [10.003768,   -1.2370133],
-                    [11.609167,    0.9119211],
-                    [-4.9821305,   3.8099794],
-                    [8.94005,    -4.14619],
-                    [-10.45487,     6.000557]])
-    env.set_obs(obs)
-    start = np.array([13, -7.5, 0, 0, 0.0])
-    goal = np.array([10, 10, 0, 0, 0.0])
+    obs_list = pickle.load(open('obstacles/obs_list_list.pkl', 'rb'))[0]
+
+    env.set_obs(obs_list)
+    start = np.array([-10, -15.0, 0, 0, 0.0])
+    goal = np.array([0, -15, 0, 0, 0.0])
     state = start.copy()
 
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
+    path = [state.copy()]
     for i in range(200):
         v, traj = dwa.control(state, goal)
 
@@ -55,15 +51,15 @@ def test_env():
         if np.linalg.norm(state[:2]-goal[:2]) < .6:
             print('Goal')
             break
-        plt.cla()
-        plot_ob(ax, env.obs_list, env.obs_size)
-        plt.plot(traj[:, 0], traj[:, 1], "-c")
-        plt.plot(state[0], state[1], "xr")
-        plt.plot(goal[0], goal[1], "xb")
-        plot_arrow(state[0], state[1], state[2])
-        plt.axis("equal")
-        plt.grid(True)
-        plt.pause(0.0001)
+        # plt.cla()
+        # plot_problem_definition(ax, env.obs_list, env.rigid_robot, start, goal)
+        # plt.plot(traj[:, 0], traj[:, 1], "-c")
+        # plot_robot(ax, env.rigid_robot, state[:3])
+        # plt.axis("equal")
+        # plt.grid(True)
+        # plt.pause(0.0001)
+        path.append(state.copy())
+    draw_path(env, start, goal, path)
     plt.show()
 
 
@@ -71,11 +67,19 @@ def test_gym():
     '''
     debug gym
     '''
-    env = DifferentialDriveGym()
+    obs_list = pickle.load(open('obstacles/obs_list_list.pkl', 'rb'))[:1]
+    # start = np.array([-10, -15.0, 0, 0, 0.0])
+    # goal = np.array([0, -15, 0, 0, 0.0])
+
+    env = DifferentialDriveGym(obs_list_list=obs_list)
     env.reset()
+    # env.state = start
+    # env.goal = goal
 
     dwa = DWA(env.robot_env)
     dwa.set_dwa(dt=0.2)
+
+    
 
     start = env.state
     state = start.copy()
@@ -209,6 +213,8 @@ def test_sst():
     plt.plot(sst.path[:, 0], sst.path[:, 1], '-b', linewidth=2.0)
     plt.savefig('sst.png')
     plt.show()
+
+
 
 
 if __name__ == "__main__":

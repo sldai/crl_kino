@@ -39,10 +39,6 @@ class RRT_RL(RRT):
         
         for n_extend in range(1, n_max_extend+1):
             action = policy_forward(self.policy, obs, eps=0.05)[0]
-            # obs_batch = Batch(obs=obs.reshape((1, -1)), info=None)
-            # action_batch = self.policy(obs_batch, deterministic=True)
-            # action = action_batch.act.detach().cpu().numpy()[0]
-            # action = action.detach().numpy().flatten()
             # control with RL policy
             obs, rewards, done, info = env.step(action)
 

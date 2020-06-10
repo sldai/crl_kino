@@ -9,26 +9,32 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import seaborn
 import matplotlib.animation as anim
+from crl_kino.utils.rigid import RectObs, RectRobot, CircleRobot
 
-def plot_arrow(x, y, yaw, length=1, width=0.5): 
-    return plt.arrow(x, y, length * np.cos(yaw), length * np.sin(yaw),
-            head_length=width, head_width=width, fc='k', ec='k', zorder=0)
+def plot_arrow(ax, x, y, yaw, length=1.5, width=0.3, color='k'): 
+    arrow = ax.arrow(x, y, length * np.cos(yaw), length * np.sin(yaw),
+            head_length=width, head_width=width, fc=color, ec=color)
+    return [arrow]
 
-def plot_robot(ax, x, y, yaw, robot_size, color):
-    mark, = plt.plot(x, y, "x", c=color)
-    arrow = plot_arrow(x, y, yaw)
-    return [mark, arrow]
+def plot_robot(ax, rigidrobot, pose):
+    rigidrobot.pose = pose[:3]
+    outline = rigidrobot.outline()
+    plot_outline, = plt.plot(outline[:,0], outline[:,1], c=rigidrobot.color)
+    return [plot_outline]
 
-def plot_ob(ax, obs_list, obs_size):
-    circle_list = []
+def plot_rectobs(ax, obs):
+    rect = patches.Rectangle(obs.rect[0], *(obs.rect[1]-obs.rect[0]), color=obs.color)
+    return ax.add_patch(rect)
+
+def plot_obs_list(ax, obs_list):
+    collection = []
     for obs in obs_list:
-        circle = patches.Circle(obs, obs_size)
-        # Add the patch to the Axes
-        circle_list.append(ax.add_patch(circle))
-    return circle_list
+        if isinstance(obs, RectObs):
+            collection.append(plot_rectobs(ax, obs))
+    return collection
 
 
-def plot_problem_definition(ax, obs_list, obs_size, robot_size, start, goal):
+def plot_problem_definition(ax, obs_list, rigidrobot, start, goal):
     """
     plot the obstacles, start and goal 
 
@@ -51,9 +57,9 @@ def plot_problem_definition(ax, obs_list, obs_size, robot_size, start, goal):
         a collection of matplotlib artists
     """
     collection = [] 
-    ax_ob = plot_ob(ax, obs_list, obs_size)
-    start_mark = plot_robot(ax, *start[:3], robot_size, 'r')
-    goal_mark = plot_robot(ax, *goal[:3], robot_size, 'b')
+    ax_ob = plot_obs_list(ax, obs_list)
+    start_mark = plot_arrow(ax, *start[:3], color='k')
+    goal_mark = plot_arrow(ax, *goal[:3], color='b')
     collection += ax_ob + start_mark + goal_mark
     return collection
 
@@ -66,7 +72,7 @@ def draw_tree(robot_env, start, goal, tree, fname='rrt_tree'):
     plt.axis("equal")
     plt.grid(True)
     collection_list = [] # each entry is a collection
-    tmp = plot_problem_definition(ax, robot_env.obs_list, robot_env.obs_size, robot_env.robot_radius, start, goal)
+    tmp = plot_problem_definition(ax, robot_env.obs_list, robot_env.rigid_robot, start, goal)
     collection_list.append(tmp)
     for node in tree:
         if node.parent:
@@ -86,13 +92,16 @@ def draw_path(robot_env, start, goal, path, fname='rrt_path'):
     plt.axis([robot_env.env_bounds[0,0], robot_env.env_bounds[0,1], robot_env.env_bounds[1,0], robot_env.env_bounds[1,1]])
     plt.axis("equal")
     plt.grid(True)
+    plt.tight_layout()
     collection_list = [] # each entry is a collection
-    tmp = plot_problem_definition(ax, robot_env.obs_list, robot_env.obs_size, robot_env.robot_radius, start, goal)
+    tmp = plot_problem_definition(ax, robot_env.obs_list, robot_env.rigid_robot, start, goal)
+    array_path = np.array([state[:2] for state in path])
+    plt.plot(array_path[:,0], array_path[:,1], c='k')
     collection_list.append(tmp)
 
     for state in path:
         tmp_ = tmp.copy()
-        robot_marker = plot_robot(ax, *state[:3], robot_env.robot_radius, 'r')
+        robot_marker = plot_robot(ax, robot_env.rigid_robot, state[:3])
         tmp_ += robot_marker
         collection_list.append(tmp_)
     gif = anim.ArtistAnimation(fig, collection_list, interval=200)

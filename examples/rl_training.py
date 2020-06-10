@@ -57,10 +57,11 @@ def get_args():
 
 
 def gym_make():
-    env = DifferentialDriveGym()
-    obc_list = pickle.load(open(os.path.dirname(
-        __file__)+'/../data/obstacles/obc_list.pkl', 'rb'))
-    env.obc_list = obc_list
+    
+    obs_list_list = pickle.load(open(os.path.dirname(
+        __file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))
+    env = DifferentialDriveGym(obs_list_list=obs_list_list)
+
     return env
 
 

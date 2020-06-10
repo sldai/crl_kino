@@ -25,7 +25,7 @@ class DifferentialDriveGym(gym.Env):
                  robot_env=DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi),
                  reward_param=np.array(
                      [50.0, -0.5, -2.0, -30.0, 1.0, 1.0, -.5, -2.5]),
-                 obc_list=np.zeros((10, 7, 2))):
+                 obs_list_list=[]):
         """
         :param robot_env: simulation environment
         """
@@ -52,7 +52,7 @@ class DifferentialDriveGym(gym.Env):
         self.current_time = 0.0
         self.max_time = 100.0
 
-        self.obc_list = obc_list.copy()
+        self.obs_list_list = obs_list_list
         self.n_case = 0
 
         self.reward_param = reward_param.copy()
@@ -82,8 +82,7 @@ class DifferentialDriveGym(gym.Env):
         # world sample position
         tmp_wPos = self.T_transform2d(wTb, self.sample_positions)
         local_map = np.zeros(len(self.sample_positions))
-        local_map = [
-            1.0*self.robot_env.valid_point_check(pos) for pos in tmp_wPos]
+        local_map[:] = self.robot_env.valid_point_check(tmp_wPos) 
         # for ind, pos in enumerate(tmp_wPos):
         #     if self.robot_env.valid_point_check(pos):
         #         local_map[ind] = 255
@@ -177,7 +176,7 @@ class DifferentialDriveGym(gym.Env):
         local_map = self.sample_local_map(wTb)
         bTw = np.linalg.inv(wTb)
         b_goal_pos = self.T_transform2d(bTw, self.goal[:2])
-        # goal position in the robot coordinate, robot velocity, local map
+        # goal position in the robot coordinate frame, robot velocity, local map
         obs = np.block([b_goal_pos, self.state[-2:], local_map])
         return obs
 
@@ -205,10 +204,9 @@ class DifferentialDriveGym(gym.Env):
                 self.curriculum[k] = v
 
     def reset(self):
-        ind_obs = np.random.randint(0, len(self.obc_list))
-        assert 0 <= self.curriculum['obs_num'] <= len(self.obc_list[ind_obs])
-        self.robot_env.set_obs(
-            self.obc_list[ind_obs][:self.curriculum['obs_num']])
+        assert len(self.obs_list_list)>0, 'No defined training environments'
+        ind_obs = np.random.randint(0, len(self.obs_list_list))
+        self.robot_env.set_obs(self.obs_list_list[ind_obs])
 
         # sample a random start goal configuration
         start = np.zeros(len(self.state_bounds))
@@ -249,15 +247,15 @@ class DifferentialDriveGym(gym.Env):
         ax = plt.gca()
         ax.cla()  # clear things
 
-        plot_ob(ax, self.robot_env.obs_list, self.robot_env.obs_size)
+        plot_obs_list(ax, self.robot_env.obs_list)
         if plot_localwindow:
             self.plot_observation()
-        plot_robot(ax, *self.state[:3], self.robot_env.robot_radius, 'r')
-        plot_robot(ax, *self.goal[:3], self.robot_env.robot_radius, 'b')
+        plot_problem_definition(ax, self.robot_env.obs_list, self.robot_env.rigid_robot, self.state, self.goal)
+        plot_robot(ax, self.robot_env.rigid_robot, self.state[:3])
 
         plt.axis('equal')
         plt.ylim(-20.0, 20.0)
-        plt.xlim(-30.0, 30.0)
+        plt.tight_layout()
         if pause:
             plt.pause(0.0001)
 
