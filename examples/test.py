@@ -30,7 +30,7 @@ def test_env():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
     dwa = DWA(env)
     dwa.set_dwa(dt=0.2, to_goal_cost_gain=1.2)
-    obs_list = pickle.load(open('obstacles/obs_list_list.pkl', 'rb'))[0]
+    obs_list = pickle.load(open(os.path.dirname(__file__)+'/data/obstacles/obs_list_list.pkl', 'rb'))[0]
 
     env.set_obs(obs_list)
     start = np.array([-10, -15.0, 0, 0, 0.0])
@@ -67,7 +67,7 @@ def test_gym():
     '''
     debug gym
     '''
-    obs_list = pickle.load(open('obstacles/obs_list_list.pkl', 'rb'))[:1]
+    obs_list = pickle.load(open(os.path.dirname(__file__)+'/data/obstacles/obs_list_list.pkl', 'rb'))[:1]
     # start = np.array([-10, -15.0, 0, 0, 0.0])
     # goal = np.array([0, -15, 0, 0, 0.0])
 
@@ -183,7 +183,7 @@ def test_rl_rrt():
 
 def test_sst():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
-    obs_list = pickle.load(open('obstacles/obs_list_list.pkl', 'rb'))[0]
+    obs_list = pickle.load(open(os.path.dirname(__file__)+'/data/obstacles/obs_list_list.pkl', 'rb'))[0]
 
     env.set_obs(obs_list)
 
