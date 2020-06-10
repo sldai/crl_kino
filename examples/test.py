@@ -183,26 +183,19 @@ def test_rl_rrt():
 
 def test_sst():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
+    obs_list = pickle.load(open('obstacles/obs_list_list.pkl', 'rb'))[0]
 
-    obs = np.array([[-10.402568,   -5.5128484],
-                    [14.448388,   -4.1362205],
-                    [10.003768,   -1.2370133],
-                    [11.609167,    0.9119211],
-                    [-4.9821305,   3.8099794],
-                    [8.94005,    -4.14619],
-                    [-10.45487,     6.000557]])
-    env.set_obs(obs)
+    env.set_obs(obs_list)
 
     sst = SST(env)
-    start = np.array([13, -7.5, 0, 0, 0.0])
-    goal = np.array([10, 10, 0, 0, 0.0])
+    start = np.array([-5, -15, 0, 0, 0.0])
+    goal = np.array([-15, 15, 0, 0, 0.0])
 
     sst.set_start_and_goal(start, goal)
     find_exact_solution = sst.planning()
 
     fig, ax = plt.subplots()
-    plot_problem_definition(ax, sst.robot_env.obs_list,
-                            sst.robot_env.obs_size, sst.robot_env.robot_radius,
+    plot_problem_definition(ax, sst.robot_env.obs_list, sst.robot_env.rigid_robot,
                             sst.obRealVector2array(sst.start), sst.obRealVector2array(sst.goal))
 
     planner_data = sst.planner_data
@@ -212,6 +205,8 @@ def test_sst():
 
     plt.plot(sst.path[:, 0], sst.path[:, 1], '-b', linewidth=2.0)
     plt.savefig('sst.png')
+
+    draw_path(sst.robot_env, start, goal, sst.path, fname='sst_path')
     plt.show()
 
 

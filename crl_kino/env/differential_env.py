@@ -25,7 +25,7 @@ def normalize_angle(angle):
 
 
 class DifferentialDriveEnv(RobotEnv):
-    def __init__(self, max_v, min_v, max_w, max_acc_v, max_acc_w, env_bounds=[-20, 20, -20, 20], base_dt=0.1):
+    def __init__(self, max_v=1.0, min_v=-0.1, max_w=np.pi, max_acc_v=1.0, max_acc_w=np.pi, env_bounds=[-20, 20, -20, 20], base_dt=0.1):
         super(DifferentialDriveEnv, self).__init__()
 
         # physical constrain
