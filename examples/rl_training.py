@@ -43,7 +43,7 @@ def get_args():
     parser.add_argument('--step-per-epoch', type=int, default=2400)
     parser.add_argument('--collect-per-step', type=int, default=4)
     parser.add_argument('--batch-size', type=int, default=128)
-    parser.add_argument('--layer', type=list, default=[512, 512, 512])
+    parser.add_argument('--layer', type=list, default=[1024, 512, 512, 512])
     parser.add_argument('--training-num', type=int, default=8)
     parser.add_argument('--test-num', type=int, default=10)
     parser.add_argument('--logdir', type=str, default='log')
@@ -111,7 +111,7 @@ def train(args=get_args()):
         policy.load_state_dict(torch.load(model_path))
 
     def save_fn(policy):
-        torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
+        torch.save(policy.state_dict(), model_path)
 
     def stop_fn(x):
         return x >= 100
@@ -137,14 +137,15 @@ def test(args=get_args()):
 
     model_path = os.path.join(args.logdir, args.task, 'ddpg/policy.pth')
     env = gym_make()
-    policy = load_policy(env, [512, 512, 512], model_path)
-
+    policy = load_policy(env, args.layer, model_path)
+    print(env.action_space.low, env.action_space.high)
     obs = env.reset()
 
     while True:
         action = policy_forward(policy, obs, eps=0.05)
         print(action)
         obs, reward, done, info = env.step(action[0])
+        print(reward)
         env.render()
         if done:
             break

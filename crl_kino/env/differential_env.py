@@ -38,7 +38,7 @@ class DifferentialDriveEnv(RobotEnv):
         self.max_acc_w = max_acc_w
         self.min_acc_w = -self.max_acc_w
         
-        self.rigid_robot = RectRobot(np.array([[-1.0, -0.5],[1.0,0.5]]),color='k')
+        self.rigid_robot = RectRobot(np.array([[-0.7, -0.5],[0.7,0.5]]),color='k')
 
         self.env_bounds = np.zeros((2, 2))
         self.env_bounds[0, 0] = env_bounds[0]

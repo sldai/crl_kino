@@ -85,6 +85,8 @@ class RRT(ABC):
 
 
     def set_start_and_goal(self, start: np.ndarray, goal: np.ndarray):
+        assert self.robot_env.valid_state_check(start) and self.robot_env.valid_state_check(goal),\
+                'The start or goal states are not valid'
         self.start = self.Node(start)
         self.goal = self.Node(goal)
 

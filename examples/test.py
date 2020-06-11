@@ -156,25 +156,23 @@ def test_rrt():
 
 def test_rl_rrt():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
-    obs = np.array([[-10.402568,   -5.5128484],
-                    [14.448388,   -4.1362205],
-                    [10.003768,   -1.2370133],
-                    [11.609167,    0.9119211],
-                    [-4.9821305,   3.8099794],
-                    [8.94005,    -4.14619],
-                    [-10.45487,     6.000557]])
-    env.set_obs(obs)
+    obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[0]
+
+    env.set_obs(obs_list)
+
+
+    start = np.array([-5, -10, np.pi/2, 0, 0.0])
+    goal = np.array([-10, 15, 0, 0, 0.0])
+
     model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
-    policy = load_policy(DifferentialDriveGym(), [512,512,512], model_path)
+
+    policy = load_policy(DifferentialDriveGym(), [1024,512,512,512], model_path)
     planner = RRT_RL(env, policy)
-    start = np.array([13, -7.5, 0, 0, 0.0])
-    goal = np.array([10, 10, 0, 0, 0.0])
 
     planner.set_start_and_goal(start, goal)
     path = planner.planning()
     draw_path(env, start, goal, path)
     draw_tree(env, start, goal, planner.node_list)
-    # planner.draw_tree()
 
 
 def test_sst():

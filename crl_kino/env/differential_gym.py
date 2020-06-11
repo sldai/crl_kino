@@ -24,7 +24,7 @@ class DifferentialDriveGym(gym.Env):
     def __init__(self,
                  robot_env=DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi),
                  reward_param=np.array(
-                     [50.0, -1.5, -1.0, -30.0, 0.6, 1.0, -1.0, -0.5]),
+                     [50.0, -1.5, -0.5, -300.0, 1.0, 1.0, -.5, -2.5]),
                  obs_list_list=[]):
         """
         :param robot_env: simulation environment
@@ -164,8 +164,15 @@ class DifferentialDriveGym(gym.Env):
         return info
 
     def _reward(self, info):
-        info_arr = np.array([info[i] for i in info])
-        reward = info_arr @ self.reward_param
+        reward = 50*info['goal']\
+            -0.5*(info['goal_dis'])\
+                -2.0*info['heading']\
+                -100*info['collision']\
+                +1.0*info['clearance']\
+                +1.0*info['v']\
+                -0.5*info['w']\
+                -2.5        
+        # reward = info_arr @ self.reward_param
         return reward
 
     def _obs(self):
