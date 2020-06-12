@@ -164,15 +164,17 @@ class DifferentialDriveGym(gym.Env):
         return info
 
     def _reward(self, info):
-        reward = 50*info['goal']\
-            -0.5*(info['goal_dis'])\
-                -2.0*info['heading']\
-                -100*info['collision']\
-                +1.0*info['clearance']\
-                +1.0*info['v']\
-                -0.5*info['w']\
-                -2.5        
-        # reward = info_arr @ self.reward_param
+        # clearance_reward = 0.5*info['clearance'] if info['clearance']>0.3 else -1.0
+        # reward = 50*info['goal']\
+        #     -0.5*(info['goal_dis'])\
+        #         -0.3*info['heading']*(3**(info['goal_dis']<=2.0))\
+        #         -100*info['collision']\
+        #         +0.5*(info['clearance']>=0.5)\
+        #         +0.1*info['v']\
+        #         -0.1*np.tanh(info['w'])\
+        #         -0.6      
+        info_arr = np.array([info[a] for a in info])  
+        reward = info_arr @ self.reward_param
         return reward
 
     def _obs(self):
@@ -229,7 +231,7 @@ class DifferentialDriveGym(gym.Env):
 
             # sample a valid goal
             for _ in range(5):
-                r = np.random.uniform(2.0, 10.0)
+                r = np.random.uniform(5.0, 8.0)
                 theta = np.random.uniform(-np.pi, np.pi)
                 goal[0] = np.clip(start[0] + r*np.cos(theta), *self.state_bounds[0,:])
                 goal[1] = np.clip(start[1] + r*np.sin(theta), *self.state_bounds[1,:])
@@ -240,7 +242,7 @@ class DifferentialDriveGym(gym.Env):
             if self.curriculum['ori']:
                 start[2] = normalize_angle(np.arctan2(
                     goal[1]-start[1], goal[0]-start[0]))
-            if self.robot_env.get_clearance(start) > 0.5 and self.robot_env.get_clearance(goal) > 0.5 and 2.0 < np.linalg.norm(start[:2]-goal[:2]) < 10.0:
+            if self.robot_env.get_clearance(start) > 0.5 and self.robot_env.get_clearance(goal) > 0.5 and 5.0 < np.linalg.norm(start[:2]-goal[:2]) < 10.0:
                 break
 
         self.state = start
@@ -261,7 +263,7 @@ class DifferentialDriveGym(gym.Env):
         plot_robot(ax, self.robot_env.rigid_robot, self.state[:3])
 
         plt.axis('equal')
-        plt.ylim(-20.0, 20.0)
+        # plt.ylim(-20.0, 20.0)
         plt.tight_layout()
         if pause:
             plt.pause(0.0001)
