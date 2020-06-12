@@ -57,6 +57,7 @@ class RRT(ABC):
         tic = time.time()
         self.node_list = [self.start]
         path = None
+        reach_exactly = False
         for i in range(self.max_iter):
             print('Iteration ' + str(i) +':', str(len(self.node_list))+' nodes')
             good_sample = False
@@ -72,16 +73,19 @@ class RRT(ABC):
 
             if len(new_node_list)>0:
                 if np.linalg.norm(self.node_list[-1].state[:2]-self.goal.state[:2]) <= 1.0: # reach goal
+                    reach_exactly = True
                     break
                 nearest_ind, cost = self.choose_parent(new_node_list, self.goal)
                 if cost<5.0: # retry to steer to goal 
                     new_node_list = self.steer(new_node_list[nearest_ind], self.goal)
                     if np.linalg.norm(self.node_list[-1].state[:2]-self.goal.state[:2]) <= 1.0:
+                        reach_exactly = True
                         break
         path = self.generate_final_course(-1)
         toc = time.time()
         self.planning_time = toc-tic
         self.path = path
+        self.reach_exactly = reach_exactly
         return path
 
 

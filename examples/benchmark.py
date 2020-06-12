@@ -1,94 +1,78 @@
+from crl_kino.policy.rl_policy import load_policy, policy_forward
+from crl_kino.utils import obs_generate
+import os.path
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 '''
 @author: daishilong
 @contact: daishilong1236@gmail.com
 '''
-import pickle
-import numpy as np
-import matplotlib.pyplot as plt
-import os.path
+
 from crl_kino.env import DifferentialDriveEnv, DifferentialDriveGym
 from crl_kino.policy.dwa import DWA
 from crl_kino.utils.draw import *
 from crl_kino.planner.rrt import RRT
 from crl_kino.planner.rrt_rl import RRT_RL
-from crl_kino.policy.rl_policy import load_RL_policy
-from crl_kino.planner.sst import SST
+
+try:
+    from crl_kino.planner.sst import SST
+except ImportError:
+    print('ompl not installed, cannot use SST')
 import argparse
+import pickle
+
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 
 
-def main():
-    repeat = 10
+def main(test_env, positions, fname):
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
 
-    obs = np.array([[-10.402568,   -5.5128484],
-                    [14.448388,   -4.1362205],
-                    [10.003768,   -1.2370133],
-                    [11.609167,    0.9119211],
-                    [-4.9821305,   3.8099794],
-                    [8.94005,    -4.14619],
-                    [-10.45487,     6.000557]])
-    env.set_obs(obs)
 
-    policy = load_RL_policy([1024, 768, 512], os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), 'data/log/mid_noise/ddpg/policy.pth'))
+    env.set_obs(test_env)
+
+    model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
+
+    policy = load_policy(DifferentialDriveGym(), [1024,512,512,512], model_path)
     rl_rrt = RRT_RL(env, policy)
 
-    dwa_rrt = RRT(env)
-
-    sst = SST(env)
     data = {
-        'rl_rrt': {'path_len': [], 'runtime': []},
-        'dwa_rrt': {'path_len': [], 'runtime': []},
-        'sst': {'path_len': [], 'runtime': []},
+        'runtime': [],
+        'path_len': []
     }
 
-    # collect data of rl_rrt
+    # sst = SST(env)
 
-    potential_pos = np.array([
-        [13, -7.5, 0, 0, 0.0],
-        [10, 10, 0, 0, 0.0],
-        [-5, 10, 0, 0, 0],
-        [-10, 0, 0, 0, 0]
-    ])
-
-    for i, start in enumerate(potential_pos):
-        for j, goal in enumerate(potential_pos):
+    for i, start in enumerate(positions):
+        for j, goal in enumerate(positions):
             if j == i: continue
             rl_rrt.set_start_and_goal(start, goal)
-            for i in range(repeat):
-                path = rl_rrt.planning()
-                data['rl_rrt']['path_len'].append(0.2*(len(path)-1))
-                data['rl_rrt']['runtime'].append(rl_rrt.planning_time)
-
-            # collect data of rrt
-
-            dwa_rrt.set_start_and_goal(start, goal)
-            for i in range(repeat):
-                path = dwa_rrt.planning()
-                data['dwa_rrt']['path_len'].append(0.2*(len(path)-1))
-                data['dwa_rrt']['runtime'].append(dwa_rrt.planning_time)
+            path = rl_rrt.planning()
+            if rl_rrt.reach_exactly:
+                data['path_len'].append(0.2*(len(path)-1))
+                data['runtime'].append(rl_rrt.planning_time)
+            else:
+                data['runtime'].append(-1)
 
             # collect data of sst
 
-            sst.set_start_and_goal(start, goal)
-            for i in range(repeat):
-                check = sst.planning()
-                data['sst']['path_len'].append(np.sum(sst.path[:, -1]))
-                data['sst']['runtime'].append(sst.planning_time)
+            # sst.set_start_and_goal(start, goal)
+            # for i in range(repeat):
+            #     check = sst.planning()
+            #     data['sst']['path_len'].append(np.sum(sst.path[:, -1]))
+            #     data['sst']['runtime'].append(sst.planning_time)
     for k,v in enumerate(data):
-        for k_,v_ in enumerate(data[v]):
-            data[v][v_] = np.array(data[v][v_])
-    pickle.dump(data, open('data.pkl', 'wb'))
-    # fig, ax = plt.subplots()
-    # ax.plot(rl_rrt_path_len, label='RL-RRT')
-    # ax.plot(dwa_rrt_path_len, label='DWA-RRT')
-    # ax.plot(sst_path_len, label='SST')
-    # plt.xlabel('')
+        data[v] = np.array(data[v])
+    pickle.dump(data, open(fname+'.pkl', 'wb'))
 
 
 if __name__ == "__main__":
-    main()
+    test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
+    test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
+    positions_test_env1 = pickle.load(open(os.path.dirname(__file__)+'/benchmark_position_test_env1.pkl', 'rb'))
+    positions_test_env2 = pickle.load(open(os.path.dirname(__file__)+'/benchmark_position_test_env2.pkl', 'rb'))
+
+    main(test_env1, positions_test_env1, 'planning_results_rrt_E_env1')
+    main(test_env2, positions_test_env2, 'planning_results_rrt_E_env2')

@@ -96,7 +96,7 @@ def draw_path(robot_env, start, goal, path, fname='rrt_path'):
     collection_list = [] # each entry is a collection
     tmp = plot_problem_definition(ax, robot_env.obs_list, robot_env.rigid_robot, start, goal)
     array_path = np.array([state[:2] for state in path])
-    plt.plot(array_path[:,0], array_path[:,1], c='k')
+    plt.plot(array_path[:,0], array_path[:,1], c='k', linewidth=1.0)
     collection_list.append(tmp)
 
     for state in path:
