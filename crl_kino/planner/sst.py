@@ -147,6 +147,7 @@ class SST(object):
         pd.computeEdgeWeights()
         xmlstring = pd.printGraphML()
         self.planner_data = self.xml2tree(xmlstring)
+        self.reach_exactly = find_exact_solution
         return find_exact_solution
 
     @staticmethod
@@ -166,3 +167,7 @@ class SST(object):
 
     def get_path(self):
         return self.path.copy()
+    def get_path_len(self):
+        if self.path is None:
+            return None
+        return np.sum(self.path[:,-1])

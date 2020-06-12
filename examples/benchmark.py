@@ -30,39 +30,40 @@ import matplotlib.pyplot as plt
 def main(test_env, positions, fname):
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
 
-
     env.set_obs(test_env)
 
-    model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
-
-    policy = load_policy(DifferentialDriveGym(), [1024,512,512,512], model_path)
-    rl_rrt = RRT_RL(env, policy)
+    # model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
+    # policy = load_policy(DifferentialDriveGym(), [1024,512,512,512], model_path)
+    # rl_rrt = RRT_RL(env, policy)
 
     data = {
         'runtime': [],
         'path_len': []
     }
 
-    # sst = SST(env)
+    sst = SST(env)
 
     for i, start in enumerate(positions):
         for j, goal in enumerate(positions):
             if j == i: continue
-            rl_rrt.set_start_and_goal(start, goal)
-            path = rl_rrt.planning()
-            if rl_rrt.reach_exactly:
-                data['path_len'].append(0.2*(len(path)-1))
-                data['runtime'].append(rl_rrt.planning_time)
-            else:
-                data['runtime'].append(-1)
+            print('Start and goal', start, goal)
+            # rl_rrt.set_start_and_goal(start, goal)
+            # path = rl_rrt.planning()
+            # if rl_rrt.reach_exactly:
+            #     data['path_len'].append(0.2*(len(path)-1))
+            #     data['runtime'].append(rl_rrt.planning_time)
+            # else:
+            #     data['runtime'].append(-1)
 
             # collect data of sst
-
-            # sst.set_start_and_goal(start, goal)
-            # for i in range(repeat):
-            #     check = sst.planning()
-            #     data['sst']['path_len'].append(np.sum(sst.path[:, -1]))
-            #     data['sst']['runtime'].append(sst.planning_time)
+            sst.set_start_and_goal(start, goal)
+            sst.planning()
+            if sst.reach_exactly:
+                data['path_len'].append(sst.get_path_len())
+                data['runtime'].append(sst.planning_time)
+            else:
+                data['runtime'].append(-1)
+            
     for k,v in enumerate(data):
         data[v] = np.array(data[v])
     pickle.dump(data, open(fname+'.pkl', 'wb'))
@@ -74,5 +75,5 @@ if __name__ == "__main__":
     positions_test_env1 = pickle.load(open(os.path.dirname(__file__)+'/benchmark_position_test_env1.pkl', 'rb'))
     positions_test_env2 = pickle.load(open(os.path.dirname(__file__)+'/benchmark_position_test_env2.pkl', 'rb'))
 
-    main(test_env1, positions_test_env1, 'planning_results_rrt_E_env1')
-    main(test_env2, positions_test_env2, 'planning_results_rrt_E_env2')
+    main(test_env1, positions_test_env1, 'planning_results_sst_env1')
+    main(test_env2, positions_test_env2, 'planning_results_sst_env2')

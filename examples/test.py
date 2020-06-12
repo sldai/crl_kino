@@ -182,28 +182,33 @@ def test_rl_rrt():
 
 def test_sst():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
-    obs_list = pickle.load(open(os.path.dirname(__file__)+'../data/obstacles/obs_list_list.pkl', 'rb'))[0]
+    obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[0]
+    test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
+    test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
+    test_env = test_env1
+    env.set_obs(test_env)
 
-    env.set_obs(obs_list)
+
+    start = np.array([-5, -15, 0, 0, 0.0])
+    goal = np.array([10, 10, 0, 0, 0.0])
 
     sst = SST(env)
-    start = np.array([-5, -15, 0, 0, 0.0])
-    goal = np.array([-15, 15, 0, 0, 0.0])
+
 
     sst.set_start_and_goal(start, goal)
-    find_exact_solution = sst.planning(2000)
+    sst.planning(300)
 
     fig, ax = plt.subplots()
-    plot_problem_definition(ax, sst.robot_env.obs_list, sst.robot_env.rigid_robot,
-                            sst.obRealVector2array(sst.start), sst.obRealVector2array(sst.goal))
+    plot_problem_definition(ax, test_env, env.rigid_robot, start, goal)
 
+    print(sst.reach_exactly, sst.get_path_len())
     planner_data = sst.planner_data
     for edge in planner_data['edges']:
         pair = planner_data['nodes'][edge]
         plt.plot(pair[:, 0], pair[:, 1], '-r', linewidth=0.6)
 
     plt.plot(sst.path[:, 0], sst.path[:, 1], '-b', linewidth=2.0)
-    plt.savefig('sst.png')
+    # plt.savefig('sst.png')
 
     draw_path(sst.robot_env, start, goal, sst.path, fname='sst_path')
     plt.show()
