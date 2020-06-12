@@ -60,7 +60,8 @@ def gym_make():
     
     obs_list_list = pickle.load(open(os.path.dirname(
         __file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))
-    env = DifferentialDriveGym(obs_list_list=obs_list_list)
+    training_env = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/training_env.pkl', 'rb'))
+    env = DifferentialDriveGym(obs_list_list=[training_env])
 
     return env
 

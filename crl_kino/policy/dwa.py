@@ -62,10 +62,10 @@ class DWA():
                 to_goal_cost = min(to_goal_cost, 2*np.pi-to_goal_cost)
                 # calc clearance cost
                 min_dis = 100
-                for i in range(0,len(traj),self.skip):
-                    x = traj[i]
-                    dis = max(self.robot_env.get_clearance(x), 0.001)
-                    min_dis = min(dis, min_dis)
+                # for i in range(0,len(traj),self.skip):
+                #     x = traj[i]
+                #     dis = max(self.robot_env.get_clearance(x), 0.001)
+                #     min_dis = min(dis, min_dis)
                 min_dis = 1.0/min_dis
 
                 # calc speed cost

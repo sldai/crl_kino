@@ -116,10 +116,11 @@ def test_policy():
     test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
     obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[:1]
     test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
+    training_env = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/training_env.pkl', 'rb'))
 
 
 
-    env = DifferentialDriveGym(obs_list_list=[test_env2])
+    env = DifferentialDriveGym(obs_list_list=[training_env])
     env.reset()
 
     policy = load_policy(env, [1024, 512, 512, 512], model_path)
@@ -131,30 +132,29 @@ def test_policy():
         action = policy_forward(policy, obs, eps=0.05)
         print(action)
         obs, reward, done, info = env.step(action[0])
+        print(reward)
         env.render()
         if done:
             break
 
 
 def test_rrt():
+    test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
+    test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
+    
+
+
+    start = np.array([-5, -15, 0, 0, 0.0])
+    goal = np.array([10, 10, 0, 0, 0.0])
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
-    obs = np.array([[-10.402568,   -5.5128484],
-                    [14.448388,   -4.1362205],
-                    [10.003768,   -1.2370133],
-                    [11.609167,    0.9119211],
-                    [-4.9821305,   3.8099794],
-                    [8.94005,    -4.14619],
-                    [-10.45487,     6.000557]])
-    env.set_obs(obs)
+    env.set_obs(test_env1)
     planner = RRT(env)
 
-    start = np.array([13, -7.5, 0, 0, 0.0])
-    goal = np.array([10, 10, 0, 0, 0.0])
-
     planner.set_start_and_goal(start, goal)
+    print(planner.planning_time)
     path = planner.planning()
-    planner.draw_path(path)
-    planner.draw_tree()
+    draw_path(env, start, goal, path)
+    draw_tree(env, start, goal, planner.node_list)
 
 
 def test_rl_rrt():
