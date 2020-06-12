@@ -261,7 +261,7 @@ class DifferentialDriveGym(gym.Env):
         plot_robot(ax, self.robot_env.rigid_robot, self.state[:3])
 
         plt.axis('equal')
-        plt.ylim(-20.0, 20.0)
+        # plt.ylim(-20.0, 20.0)
         plt.tight_layout()
         if pause:
             plt.pause(0.0001)
