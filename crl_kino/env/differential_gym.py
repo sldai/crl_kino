@@ -229,7 +229,7 @@ class DifferentialDriveGym(gym.Env):
 
             # sample a valid goal
             for _ in range(5):
-                r = np.random.uniform(2.0, 10.0)
+                r = np.random.uniform(2.0, 20.0)
                 theta = np.random.uniform(-np.pi, np.pi)
                 goal[0] = np.clip(start[0] + r*np.cos(theta), *self.state_bounds[0,:])
                 goal[1] = np.clip(start[1] + r*np.sin(theta), *self.state_bounds[1,:])
@@ -240,7 +240,7 @@ class DifferentialDriveGym(gym.Env):
             if self.curriculum['ori']:
                 start[2] = normalize_angle(np.arctan2(
                     goal[1]-start[1], goal[0]-start[0]))
-            if self.robot_env.get_clearance(start) > 0.5 and self.robot_env.get_clearance(goal) > 0.5 and 2.0 < np.linalg.norm(start[:2]-goal[:2]) < 10.0:
+            if self.robot_env.get_clearance(start) > 0.5 and self.robot_env.get_clearance(goal) > 0.5 and 2.0 < np.linalg.norm(start[:2]-goal[:2]) < 20.0:
                 break
 
         self.state = start
