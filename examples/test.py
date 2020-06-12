@@ -6,6 +6,9 @@ from crl_kino.policy.dwa import DWA
 from crl_kino.utils.draw import *
 from crl_kino.planner.rrt import RRT
 from crl_kino.planner.rrt_rl import RRT_RL
+from crl_kino.planner.rrt_rl_estimator import RRT_RL_Estimator
+
+from crl_kino.estimator.load_estimator import load_estimator
 
 try:
     from crl_kino.planner.sst import SST
@@ -175,10 +178,36 @@ def test_rl_rrt():
 
     planner.set_start_and_goal(start, goal)
     path = planner.planning()
-    print(planner.planning_time)
+
     draw_path(env, start, goal, path)
     draw_tree(env, start, goal, planner.node_list)
 
+def test_rl_rrt_estimator():
+    # test rl rrt with estimator
+    env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
+    obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[0]
+    test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
+    test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
+    env.set_obs(test_env1)
+
+
+    start = np.array([-5, -15, 0, 0, 0.0])
+    goal = np.array([10, 10, 0, 0, 0.0])
+
+    estimator_path = os.path.dirname(__file__)+"/../data/net/estimator/CNN_statedict.pth"
+    estimator_model = load_estimator(estimator_path)
+
+    model_path = os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
+
+    policy = load_policy(DifferentialDriveGym(), [1024,512,512,512], model_path)
+    planner = RRT_RL_Estimator(env, policy, estimator_model)
+
+    planner.set_start_and_goal(start, goal)
+    path = planner.planning()
+    print("TTR: {}".format(len(path)*0.2))
+    print("Planning Time: {}".format(planner.planning_time))
+    draw_path(env, start, goal, path)
+    draw_tree(env, start, goal, planner.node_list)
 
 def test_sst():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
@@ -231,3 +260,5 @@ if __name__ == "__main__":
         test_rl_rrt()
     elif args.case == 'sst':
         test_sst()
+    elif args.case == "rl_rrt_estimator":
+        test_rl_rrt_estimator()
