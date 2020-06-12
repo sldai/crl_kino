@@ -162,7 +162,7 @@ def test_rl_rrt():
     obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[0]
     test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
     test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
-    env.set_obs(test_env1)
+    env.set_obs(test_env2)
 
 
     start = np.array([-5, -15, 0, 0, 0.0])
@@ -175,6 +175,7 @@ def test_rl_rrt():
 
     planner.set_start_and_goal(start, goal)
     path = planner.planning()
+    print(planner.planning_time)
     draw_path(env, start, goal, path)
     draw_tree(env, start, goal, planner.node_list)
 

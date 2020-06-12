@@ -164,15 +164,17 @@ class DifferentialDriveGym(gym.Env):
         return info
 
     def _reward(self, info):
-        reward = 50*info['goal']\
-            -0.5*(info['goal_dis'])\
-                -0.3*info['heading']*(3**(info['goal_dis']<=2.0))\
-                -100*info['collision']\
-                +0.5*info['clearance']\
-                +0.1*info['v']\
-                -0.1*np.tanh(info['w'])\
-                -0.6        
-        # reward = info_arr @ self.reward_param
+        # clearance_reward = 0.5*info['clearance'] if info['clearance']>0.3 else -1.0
+        # reward = 50*info['goal']\
+        #     -0.5*(info['goal_dis'])\
+        #         -0.3*info['heading']*(3**(info['goal_dis']<=2.0))\
+        #         -100*info['collision']\
+        #         +0.5*(info['clearance']>=0.5)\
+        #         +0.1*info['v']\
+        #         -0.1*np.tanh(info['w'])\
+        #         -0.6      
+        info_arr = np.array([info[a] for a in info])  
+        reward = info_arr @ self.reward_param
         return reward
 
     def _obs(self):
@@ -229,7 +231,7 @@ class DifferentialDriveGym(gym.Env):
 
             # sample a valid goal
             for _ in range(5):
-                r = np.random.uniform(5.0, 10.0)
+                r = np.random.uniform(5.0, 8.0)
                 theta = np.random.uniform(-np.pi, np.pi)
                 goal[0] = np.clip(start[0] + r*np.cos(theta), *self.state_bounds[0,:])
                 goal[1] = np.clip(start[1] + r*np.sin(theta), *self.state_bounds[1,:])
