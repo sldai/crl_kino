@@ -46,6 +46,71 @@ class WeightsActor(nn.Module):
         logits = logits / torch.sum(logits, dim=1).view((-1,1))
         return logits, 'softmax'
 
+class Conv(nn.Module):
+    def __init__(self, input_size = [1, 30, 30], output_size = 100, device='cpu'):
+        super.__init__()
+        self.device = device
+        self.model = [
+            nn.Conv2d(1,8,kernel_size=(5,5)),
+            nn.MaxPool2d(kernel_size=(2,2)),
+            nn.PReLU(),
+            nn.Conv2d(8,16,kernel_size=(3,3)),
+            nn.MaxPool2d(kernel_size=(2,2)),
+            nn.PReLU(),
+            nn.Conv2d(8,16,kernel_size=(3,3)),
+            nn.PReLU()
+        ]
+        self.model = nn.Sequential(*self.model)
+        rand_sample = torch.rand([1]+input_size)
+        length = self.model(rand_sample).flatten().size()
+        self.model.add_module('flatten layer',nn.Linear(length, output_size))
+
+    def forward(self, s):
+        if not isinstance(s, torch.Tensor):
+            s = torch.tensor(s, device=self.device, dtype=torch.float)
+        logits = self.model(s)
+        return logits
+
+class ActorConv(nn.Module):
+    """
+    The actor and critic share a convolutional network, which encodes the local map
+    into a vector. Then the actor and critic combines the 
+    """
+    def __init__(self, conv, actor):
+        self.conv = conv
+        self.actor = actor
+        self.device = self.actor.device
+    
+    def forward(self, tuple_state, **kwargs):
+        local_map, s = tuple_state
+        if not isinstance(s, torch.Tensor):
+            s = torch.tensor(s, device=self.device, dtype=torch.float)
+        logits = self.conv(local_map)
+        logits = torch.cat(logits,s)
+        logits = self.actor(logits,**kwargs)
+        return logits
+
+class CriticConv(nn.Module):
+    """
+    The actor and critic share a convolutional network, which encodes the local map
+    into a vector. Then the actor and critic combines the 
+    """
+    def __init__(self, conv, critic):
+        self.conv = conv
+        self.critic = critic
+        self.device = self.critic.device
+    
+    def forward(self, tuple_state, **kwargs):
+        local_map, s = tuple_state
+        if not isinstance(s, torch.Tensor):
+            s = torch.tensor(s, device=self.device, dtype=torch.float)
+        logits = self.conv(local_map)
+        logits = torch.cat(logits,s)
+        logits = self.critic(logits,**kwargs)
+        return logits
+
+
+
 class Actor(nn.Module):
     def __init__(self, layer, state_shape, action_shape,
                  action_range, device='cpu'):

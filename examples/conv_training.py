@@ -24,7 +24,7 @@ from tianshou.policy import DDPGPolicy
 from tianshou.trainer import offpolicy_trainer
 from tianshou.data import Collector, ReplayBuffer, Batch
 
-from crl_kino.policy.net import Actor, Critic
+from crl_kino.policy.net import Actor, Critic, Conv, ActorConv, CriticConv
 
 
 def get_args():
@@ -60,8 +60,7 @@ def gym_make():
     
     obs_list_list = pickle.load(open(os.path.dirname(
         __file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))
-    training_env = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/training_env.pkl', 'rb'))
-    env = DifferentialDriveGym(obs_list_list=[training_env])
+    env = DifferentialDriveGym(obs_list_list=obs_list_list)
 
     return env
 
@@ -69,7 +68,9 @@ def gym_make():
 def train(args=get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
     env = gym_make()
-    args.state_shape = env.observation_space.shape or env.observation_space.n
+    args.local_map_shape = env.observation_space[0].shape
+    args.output_size = 500
+    args.state_shape = env.observation_space[1].shape
     args.action_shape = env.action_space.shape or env.action_space.n
     args.action_range = [env.action_space.low, env.action_space.high]
 
@@ -84,14 +85,21 @@ def train(args=get_args()):
     train_envs.seed(args.seed)
     test_envs.seed(args.seed)
     # model
+    conv = Conv(input_size=args.local_map_shape, output_size=args.output_size)
+
     actor = Actor(
-        args.layer, args.state_shape, args.action_shape,
+        args.layer, args.state_shape+args.output_size, args.action_shape,
         args.action_range, args.device
     ).to(args.device)
+
+    actor = ActorConv(conv, actor)
+
     actor_optim = torch.optim.Adam(actor.parameters(), lr=args.actor_lr)
+
     critic = Critic(
-        args.layer, args.state_shape, args.action_shape, args.device
+        args.layer, args.state_shape+args.output_size, args.action_shape, args.device
     ).to(args.device)
+    critic_
     critic_optim = torch.optim.Adam(critic.parameters(), lr=args.critic_lr)
     policy = DDPGPolicy(
         actor, actor_optim, critic, critic_optim,
