@@ -115,9 +115,11 @@ def test_policy():
     
     test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
     obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[:1]
+    test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
 
 
-    env = DifferentialDriveGym(obs_list_list=[test_env1])
+
+    env = DifferentialDriveGym(obs_list_list=[test_env2])
     env.reset()
 
     policy = load_policy(env, [1024, 512, 512, 512], model_path)
@@ -159,6 +161,7 @@ def test_rl_rrt():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
     obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[0]
     test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
+    test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
     env.set_obs(test_env1)
 
 
