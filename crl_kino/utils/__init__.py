@@ -14,7 +14,11 @@ def obs_generate(case_num=10, obs_num_max=8, size_range=[3.0, 20.0], min_gap=3.0
         os.makedirs(dir_path)
     # mpl.style.use('seaborn')
     fig, ax = plt.subplots(figsize=(6,6))
-
+    color = (122/255.0,110/255.0,119/255.0)
+    botboundary = RectObs(np.array([[-22, -22],[22, -20.0]]), color=color)
+    topboundary = RectObs(np.array([[-22, 20],[22, 22.0]]), color=color)
+    leftboundary = RectObs(np.array([[-22, -20],[-20, 20.0]]), color=color)
+    rightboundary = RectObs(np.array([[20, -20],[22, 20.0]]), color=color)
     obs_list_list = []
     for i in range(case_num):
         print(i)
@@ -48,7 +52,8 @@ def obs_generate(case_num=10, obs_num_max=8, size_range=[3.0, 20.0], min_gap=3.0
                     break
             
             rect = np.array([leftbottom, leftbottom + np.array([width, height])])
-            obs_list.append(RectObs(rect, color=(122/255.0,110/255.0,119/255.0)))
+            obs_list.append(RectObs(rect, color=color))
+        obs_list += [botboundary, topboundary, leftboundary, rightboundary]
             
         plot_obs_list(ax, obs_list)
         obs_list_list.append(obs_list)

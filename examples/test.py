@@ -115,14 +115,17 @@ def test_gym():
 def test_policy():
     # torch.set_num_threads(1)  # we just need only one thread for NN
     model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
-  
+    
+    test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
     obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[:1]
+    test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
 
 
-    env = DifferentialDriveGym(obs_list_list=obs_list)
+
+    env = DifferentialDriveGym(obs_list_list=[test_env2])
     env.reset()
 
-    policy = load_policy(env, [512, 512, 512], model_path)
+    policy = load_policy(env, [1024, 512, 512, 512], model_path)
 
     obs = env.reset()
 
@@ -160,12 +163,13 @@ def test_rrt():
 def test_rl_rrt():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
     obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[0]
+    test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
+    test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
+    env.set_obs(test_env1)
 
-    env.set_obs(obs_list)
 
-
-    start = np.array([-5, -10, np.pi/2, 0, 0.0])
-    goal = np.array([-10, 15, 0, 0, 0.0])
+    start = np.array([-5, -15, 0, 0, 0.0])
+    goal = np.array([10, 10, 0, 0, 0.0])
 
     model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
 

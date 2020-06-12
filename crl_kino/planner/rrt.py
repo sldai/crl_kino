@@ -58,6 +58,7 @@ class RRT(ABC):
         self.node_list = [self.start]
         path = None
         for i in range(self.max_iter):
+            print('Iteration ' + str(i) +':', str(len(self.node_list))+' nodes')
             good_sample = False
             while not good_sample:
                 rnd_node = self.sample(self.goal)
