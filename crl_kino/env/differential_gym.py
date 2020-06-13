@@ -212,7 +212,7 @@ class DifferentialDriveGym(gym.Env):
             if self.curriculum[k] is not None:
                 self.curriculum[k] = v
 
-    def reset(self):
+    def reset(self, low=5, high=8):
         assert len(self.obs_list_list)>0, 'No defined training environments'
         ind_obs = np.random.randint(0, len(self.obs_list_list))
         self.robot_env.set_obs(self.obs_list_list[ind_obs])
@@ -231,7 +231,7 @@ class DifferentialDriveGym(gym.Env):
 
             # sample a valid goal
             for _ in range(5):
-                r = np.random.uniform(5.0, 8.0)
+                r = np.random.uniform(low, high)
                 theta = np.random.uniform(-np.pi, np.pi)
                 goal[0] = np.clip(start[0] + r*np.cos(theta), *self.state_bounds[0,:])
                 goal[1] = np.clip(start[1] + r*np.sin(theta), *self.state_bounds[1,:])
@@ -242,7 +242,7 @@ class DifferentialDriveGym(gym.Env):
             if self.curriculum['ori']:
                 start[2] = normalize_angle(np.arctan2(
                     goal[1]-start[1], goal[0]-start[0]))
-            if self.robot_env.get_clearance(start) > 0.5 and self.robot_env.get_clearance(goal) > 0.5 and 5.0 < np.linalg.norm(start[:2]-goal[:2]) < 10.0:
+            if self.robot_env.get_clearance(start) > 0.5 and self.robot_env.get_clearance(goal) > 0.5 and low < np.linalg.norm(start[:2]-goal[:2]) < high:
                 break
 
         self.state = start
