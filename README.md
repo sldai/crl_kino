@@ -36,3 +36,10 @@ Train an agent:
 python examples/rl_training.py 
 ```
 
+## Results
+
+RRT tree growing process
+![path](/data/images/rrt_tree.gif)
+
+The final course 
+![path](/data/images/rrt_path.gif)

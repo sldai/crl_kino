@@ -187,13 +187,13 @@ def test_rl_rrt_estimator():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
     obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[0]
     test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
-    # start = np.array([-5, -15, 0, 0, 0.0])
-    # goal = np.array([10, 10, 0, 0, 0.0])
+    start = np.array([-5, -15, 0, 0, 0.0])
+    goal = np.array([10, 10, 0, 0, 0.0])
 
     test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
-    start = np.array([-15.0,17,0,0,0])
-    goal = np.array([10.8,-8.5,0,0,0])
-    env.set_obs(test_env2)
+    # start = np.array([-15.0,17,0,0,0])
+    # goal = np.array([10.8,-8.5,0,0,0])
+    env.set_obs(test_env1)
 
 
 

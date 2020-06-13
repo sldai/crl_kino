@@ -13,7 +13,8 @@ from crl_kino.policy.dwa import DWA
 from crl_kino.utils.draw import *
 from crl_kino.planner.rrt import RRT
 from crl_kino.planner.rrt_rl import RRT_RL
-
+from crl_kino.planner.rrt_rl_estimator import RRT_RL_Estimator
+from crl_kino.estimator.load_estimator import load_estimator
 try:
     from crl_kino.planner.sst import SST
 except ImportError:
@@ -32,7 +33,7 @@ def main(test_env, positions, fname):
 
     env.set_obs(test_env)
 
-    # model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
+    model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
     # policy = load_policy(DifferentialDriveGym(), [1024,512,512,512], model_path)
     # rl_rrt = RRT_RL(env, policy)
 
@@ -41,7 +42,16 @@ def main(test_env, positions, fname):
         'path_len': []
     }
 
-    sst = SST(env)
+    estimator_path = os.path.dirname(__file__)+"/../data/net/estimator/dist_est_statedict.pth"
+    classifier_path = os.path.dirname(__file__)+"/../data/net/estimator/classifier_statedict.pth"
+
+    estimator_model, classifier_model = load_estimator(estimator_path, classifier_path)
+
+    policy = load_policy(DifferentialDriveGym(), [1024,512,512,512], model_path)
+    rl_rrt_estimator = RRT_RL_Estimator(env, policy, estimator_model, classifier_model)
+
+
+    # sst = SST(env)
 
     for i, start in enumerate(positions):
         for j, goal in enumerate(positions):
@@ -55,14 +65,23 @@ def main(test_env, positions, fname):
             # else:
             #     data['runtime'].append(-1)
 
-            # collect data of sst
-            sst.set_start_and_goal(start, goal)
-            sst.planning()
-            if sst.reach_exactly:
-                data['path_len'].append(sst.get_path_len())
-                data['runtime'].append(sst.planning_time)
+
+            rl_rrt_estimator.set_start_and_goal(start, goal)
+            path = rl_rrt_estimator.planning()
+            if rl_rrt_estimator.reach_exactly:
+                data['path_len'].append(0.2*(len(path)-1))
+                data['runtime'].append(rl_rrt_estimator.planning_time)
             else:
                 data['runtime'].append(-1)
+
+            # collect data of sst
+            # sst.set_start_and_goal(start, goal)
+            # sst.planning()
+            # if sst.reach_exactly:
+            #     data['path_len'].append(sst.get_path_len())
+            #     data['runtime'].append(sst.planning_time)
+            # else:
+            #     data['runtime'].append(-1)
             
     for k,v in enumerate(data):
         data[v] = np.array(data[v])
@@ -75,5 +94,5 @@ if __name__ == "__main__":
     positions_test_env1 = pickle.load(open(os.path.dirname(__file__)+'/benchmark_position_test_env1.pkl', 'rb'))
     positions_test_env2 = pickle.load(open(os.path.dirname(__file__)+'/benchmark_position_test_env2.pkl', 'rb'))
 
-    main(test_env1, positions_test_env1, 'planning_results_sst_env1')
-    main(test_env2, positions_test_env2, 'planning_results_sst_env2')
+    main(test_env1, positions_test_env1, 'planning_results_rrt_env1')
+    main(test_env2, positions_test_env2, 'planning_results_rrt_env2')
