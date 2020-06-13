@@ -187,12 +187,18 @@ def test_rl_rrt_estimator():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
     obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[0]
     test_env1 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env1.pkl', 'rb'))
+    # start = np.array([-5, -15, 0, 0, 0.0])
+    # goal = np.array([10, 10, 0, 0, 0.0])
+
     test_env2 = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
-    env.set_obs(test_env1)
+    start = np.array([-15.0,17,0,0,0])
+    goal = np.array([10.8,-8.5,0,0,0])
+    env.set_obs(test_env2)
 
 
-    start = np.array([-5, -15, 0, 0, 0.0])
-    goal = np.array([10, 10, 0, 0, 0.0])
+
+
+
 
     estimator_path = os.path.dirname(__file__)+"/../data/net/estimator/CNN_statedict.pth"
     estimator_model = load_estimator(estimator_path)
@@ -208,6 +214,9 @@ def test_rl_rrt_estimator():
     print("Planning Time: {}".format(planner.planning_time))
     draw_path(env, start, goal, path)
     draw_tree(env, start, goal, planner.node_list)
+    pickle.dump(planner.node_list,open('rrt_learn_tree2.pkl','wb'))
+    pickle.dump(path,open('rrt_learn_path2.pkl','wb'))
+
 
 def test_sst():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
@@ -240,6 +249,7 @@ def test_sst():
     # plt.savefig('sst.png')
 
     draw_path(sst.robot_env, start, goal, sst.path, fname='sst_path')
+
     plt.show()
 
 
