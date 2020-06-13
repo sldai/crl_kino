@@ -178,7 +178,7 @@ def test_rl_rrt():
 
     planner.set_start_and_goal(start, goal)
     path = planner.planning()
-
+    print(planner.planning_time)
     draw_path(env, start, goal, path)
     draw_tree(env, start, goal, planner.node_list)
 
@@ -200,13 +200,15 @@ def test_rl_rrt_estimator():
 
 
 
-    estimator_path = os.path.dirname(__file__)+"/../data/net/estimator/CNN_statedict.pth"
-    estimator_model = load_estimator(estimator_path)
+    estimator_path = os.path.dirname(__file__)+"/../data/net/estimator/dist_est_statedict.pth"
+    classifier_path = os.path.dirname(__file__)+"/../data/net/estimator/classifier_statedict.pth"
+
+    estimator_model, classifier_model = load_estimator(estimator_path, classifier_path)
 
     model_path = os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
 
     policy = load_policy(DifferentialDriveGym(), [1024,512,512,512], model_path)
-    planner = RRT_RL_Estimator(env, policy, estimator_model)
+    planner = RRT_RL_Estimator(env, policy, estimator_model, classifier_model)
 
     planner.set_start_and_goal(start, goal)
     path = planner.planning()

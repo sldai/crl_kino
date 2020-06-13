@@ -14,12 +14,13 @@ import torch
 
 
 class RRT_RL_Estimator(RRT):
-    def __init__(self, robot_env, policy, estimator, goal_sample_rate=5, max_iter=500):
+    def __init__(self, robot_env, policy, estimator, classifier, goal_sample_rate=5, max_iter=500):
         super().__init__(robot_env, goal_sample_rate, max_iter)
         # obs = robot_env.obs_list.copy()
         self.gym = DifferentialDriveGym(robot_env)
         self.policy = policy
         self.estimator = estimator
+        self.classifier = classifier
         # self.gym.robot_env.set_obs(obs)
 
     def choose_parent(self, node_list, rnd_node):
@@ -60,15 +61,21 @@ class RRT_RL_Estimator(RRT):
         spatial = inputs[:, 4:].view([-1, 1, 27, 27])
         ext = inputs[:, 1:4]
 
-        outputs = self.estimator(spatial, ext)
+        outputs_e = self.estimator(spatial, ext)[:, 0]
+        outputs_c = self.classifier(spatial, ext)[:, 0]
 
-        prob = outputs.detach().numpy()
+
+        prob = outputs_c.detach().numpy()
+        estimate_dist = outputs_e.detach().numpy()
         fail = 1-np.round(prob)
+        #print(fail)
         dis_list = np.array([np.linalg.norm(node.state[:2]-rnd_node.state[:2]) for node in node_list])
-
-        dis_list[np.array(node_list_valid)] += 100*fail[:, 0]
+        dis_list[np.array(node_list_valid)] = (estimate_dist+1)*15
+        dis_list[np.array(node_list_valid)] += 100*fail
 
         min_ind = np.argmin(dis_list)
+
+        #print(min_ind, dis_list[min_ind])
         return min_ind, dis_list[min_ind]
 
     def steer(self, from_node, to_node, t_max_extend=10.0, t_tree=5.0):

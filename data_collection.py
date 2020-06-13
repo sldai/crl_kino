@@ -37,46 +37,48 @@ def data_collection():
     obs_list = []
     cost_list = []
 
-    for maps in range(20):
-        print("sampling: {}".format(maps))
-        obstacles_list = pickle.load(open(os.path.dirname(__file__)+'/data/obstacles/obs_list_list.pkl', 'rb'))[maps:maps+1]
+    
+    training_env = pickle.load(open(os.path.dirname(__file__)+'/data/obstacles/training_env.pkl', 'rb'))
 
-        env = DifferentialDriveGym(obs_list_list=obstacles_list)
+    env = DifferentialDriveGym(obs_list_list=[training_env])
 
-        policy = load_policy(env, [1024, 512, 512, 512], model_path)
-
+    policy = load_policy(env, [1024, 512, 512, 512], model_path)
 
 
-        for _ in range(100):
-            obs = env.reset()
 
+    for idx in range(1000):
+        print("sampling: {}".format(idx))
+
+        obs = env.reset(2, 10)
+
+        #env.render()
+
+        obs_epi = []
+        obs_epi.append(obs)
+
+        t = 0
+        while True:
+            action = policy_forward(policy, obs, eps=0.05)
+            obs, reward, done, info = env.step(action[0])
             #env.render()
-
-            obs_epi = []
             obs_epi.append(obs)
 
-            t = 0
-            while True:
-                action = policy_forward(policy, obs, eps=0.05)
-                obs, reward, done, info = env.step(action[0])
-                env.render()
-                obs_epi.append(obs)
+            t += 1
 
-                t += 1
+            if done or t >= 150:
+                break
+        
+        goal_dist = np.linalg.norm(env.state[:2]-env.goal[:2])
 
-                if done:
-                    break
-            
-            goal_dist = np.linalg.norm(env.state[:2]-env.goal[:2])
-
-            if goal_dist > 1:
-                print("not arrive")
-                costs = np.ones([t+1, ])*150
-            else:
-                costs = np.flip(np.arange(t+1))
-                print("arrive")
-            obs_list.append(np.array(obs_epi))
-            cost_list.append(costs*0.2)
+        if goal_dist > 1:
+            print("not arrive")
+            costs = np.ones([t+1, ])*150
+        else:
+            costs = np.flip(np.arange(t+1))
+            print("arrive")
+        print(costs)
+        obs_list.append(np.array(obs_epi))
+        cost_list.append(costs*0.2)
 
 
         
