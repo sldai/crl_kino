@@ -262,7 +262,8 @@ class DifferentialDriveGym(gym.Env):
         plot_problem_definition(ax, self.robot_env.obs_list, self.robot_env.rigid_robot, self.state, self.goal)
         plot_robot(ax, self.robot_env.rigid_robot, self.state[:3])
 
-        plt.axis('equal')
+        # plt.axis('equal')
+        plt.axis([-10,10,-10,10])
         # plt.ylim(-20.0, 20.0)
         plt.tight_layout()
         if pause:
@@ -271,6 +272,53 @@ class DifferentialDriveGym(gym.Env):
         return np.array([[[1, 1, 1]]
                          ], dtype=np.uint8)
 
+################### LQR ##################################
+
+class DifferentailDriveGymLQR(DifferentialDriveGym):
+    def __init__(self):
+        super().__init__(obs_list_list = [])
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(8,))
+        control_bounds = self.robot_env.get_bounds()['control_bounds']
+        self.action_space = spaces.Box(low=control_bounds[:,0], high=control_bounds[:,1])
+        self.max_time = 50.0
+
+    def step(self, action):
+        dt = 0.1
+        self.state = self.robot_env.motion(self.state, action, dt)
+        self.current_time += dt
+        obs = self._obs()
+        Q = np.diag([1.0, 1.0, 0.5, 0.2, 0.1])
+        R = np.diag([0.1,0.2])
+        xt = self.goal-self.state
+        xt[2] = normalize_angle(xt[2])  
+        ut = action
+        
+        reach = np.linalg.norm(Q @ xt) <= 2.0
+        reward = -(xt @ Q @ xt + ut @ R @ ut) + reach * 20.0
+        done = self.current_time >= self.max_time or reach
+        info = self._info()
+        return obs, reward, done, info
+
+    def _obs(self):
+        return np.block([self.goal[:2]-self.state[:2], self.state[2:], self.goal[2:]])
+
+    def reset(self):
+        # sample a random start goal configuration
+        start = np.random.uniform(
+                self.state_bounds[:, 0], self.state_bounds[:, 1])
+        start[:2] = 0
+
+        goal = np.random.uniform(self.state_bounds[:,0], self.state_bounds[:,1])
+        r = np.random.uniform(2.0, 10.0)
+        theta = np.random.uniform(-np.pi, np.pi)
+        goal[0] = np.clip(start[0] + r*np.cos(theta), *self.state_bounds[0,:])
+        goal[1] = np.clip(start[1] + r*np.sin(theta), *self.state_bounds[1,:])
+
+        self.state = start
+        self.current_time = 0
+        self.goal = goal
+        obs = self._obs()
+        return obs
 
 ################### motion primitives ######################
 class DifferentialDriveGymPrimitive(DifferentialDriveGym):
@@ -398,3 +446,18 @@ class DifferentialDriveGymCompose(DifferentialDriveGym):
         obs = np.block([self.state[2:], self.goal[:2]-self.state[:2], local_map]+self.primitives())
         return obs
 
+
+if __name__ == "__main__":
+    env = DifferentailDriveGymLQR()
+    obs = env.reset()
+    
+    while True:
+        action = np.random.uniform(size=(2))
+        print(action)
+        reward, obs, done, info = env.step(action)
+        print(reward)
+        print(obs)
+        
+        env.render()
+        
+        if done: break
