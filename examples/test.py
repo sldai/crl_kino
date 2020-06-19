@@ -159,7 +159,7 @@ def test_rrt():
     draw_path(env, start, goal, path)
     draw_tree(env, start, goal, planner.node_list)
 
-
+from crl_kino.env.differential_gym import DifferentailDriveGymLQR
 def test_rl_rrt():
     env = DifferentialDriveEnv(1.0, -0.1, np.pi, 1.0, np.pi)
     obs_list = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))[0]
@@ -173,7 +173,7 @@ def test_rl_rrt():
 
     model_path =os.path.dirname(__file__)+'/../data/net/end2end/ddpg/policy.pth'
 
-    policy = load_policy(DifferentialDriveGym(), [1024,512,512,512], model_path)
+    policy = load_policy(DifferentailDriveGymLQR(), [1024,512,512,512], model_path)
     planner = RRT_RL(env, policy)
 
     planner.set_start_and_goal(start, goal)

@@ -263,7 +263,7 @@ class DifferentialDriveGym(gym.Env):
         plot_robot(ax, self.robot_env.rigid_robot, self.state[:3])
 
         # plt.axis('equal')
-        plt.axis([-10,10,-10,10])
+        plt.axis([-12,12,-10,10])
         # plt.ylim(-20.0, 20.0)
         plt.tight_layout()
         if pause:
@@ -283,18 +283,20 @@ class DifferentailDriveGymLQR(DifferentialDriveGym):
         self.max_time = 50.0
 
     def step(self, action):
-        dt = 0.1
+        dt = 0.2
         self.state = self.robot_env.motion(self.state, action, dt)
         self.current_time += dt
         obs = self._obs()
-        Q = np.diag([1.0, 1.0, 0.5, 0.2, 0.1])
+        Q = np.diag([1.0, 1.0, 0.5, 0.0, 0.0])
         R = np.diag([0.1,0.2])
         xt = self.goal-self.state
         xt[2] = normalize_angle(xt[2])  
         ut = action
         
         reach = np.linalg.norm(Q @ xt) <= 2.0
-        reward = -(xt @ Q @ xt + ut @ R @ ut) + reach * 20.0
+        reward = -(xt @ Q @ xt + ut @ R @ ut) + 1.0*self.state[3] - 0.5*abs(self.state[4])
+        reward *= 0.01 
+        reward += reach * 20
         done = self.current_time >= self.max_time or reach
         info = self._info()
         return obs, reward, done, info

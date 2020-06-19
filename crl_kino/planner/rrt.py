@@ -66,19 +66,19 @@ class RRT(ABC):
                 if not self.robot_env.valid_state_check(rnd_node.state): 
                     continue
                 nearest_ind, cost = self.choose_parent(self.node_list, rnd_node)
-                if 1.0<= cost < 20: good_sample = True
+                if 2.0<= cost < 20: good_sample = True
             nearest_node = self.node_list[nearest_ind]
 
             new_node_list = self.steer(nearest_node, rnd_node)
 
             if len(new_node_list)>0:
-                if np.linalg.norm(self.node_list[-1].state[:2]-self.goal.state[:2]) <= 1.0: # reach goal
+                if self.reach(self.node_list[-1].state,self.goal.state): # reach goal
                     reach_exactly = True
                     break
                 nearest_ind, cost = self.choose_parent(new_node_list, self.goal)
-                if cost<5.0: # retry to steer to goal 
+                if cost<8.0: # retry to steer to goal 
                     new_node_list = self.steer(new_node_list[nearest_ind], self.goal)
-                    if np.linalg.norm(self.node_list[-1].state[:2]-self.goal.state[:2]) <= 1.0:
+                    if self.reach(self.node_list[-1].state,self.goal.state):
                         reach_exactly = True
                         break
         path = self.generate_final_course(-1)
@@ -156,9 +156,20 @@ class RRT(ABC):
     @staticmethod
     def choose_parent(node_list, rnd_node):
         # consider distance as cost
-        dis_list = np.array([np.linalg.norm(node.state[:2]-rnd_node.state[:2]) for node in node_list])
+        Q = np.diag([1.0, 1.0, 0.0, 0.0, 0.0])
+        dis_list = np.array([RRT.dist(node.state, rnd_node.state) for node in node_list])
         min_ind = np.argmin(dis_list)
         return min_ind, dis_list[min_ind]
+
+    @staticmethod
+    def dist(state, goal):
+        """
+        Check whether the goal is reached
+        """
+        Q = np.diag([1.0, 1.0, 0.5, 0.0, 0.0])
+        d = goal-state
+        d[2] = normalize_angle(d[2])
+        return np.linalg.norm(Q @ d)
 
     def collsion_check(self, path):
         check = True
@@ -168,4 +179,10 @@ class RRT(ABC):
                 break
         return check        
 
-
+    @staticmethod
+    def reach(state, goal):
+        """
+        Check whether the goal is reached
+        """
+        return RRT.dist(state, goal)<=2.0
+from crl_kino.env.differential_env import normalize_angle

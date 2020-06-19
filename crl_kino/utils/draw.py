@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import seaborn
+# import seaborn
 import matplotlib.animation as anim
 from crl_kino.utils.rigid import RectObs, RectRobot, CircleRobot
 
