@@ -5,11 +5,9 @@
 @contact: daishilong1236@gmail.com
 '''
 import pickle
-from crl_kino.policy.rl_policy import load_policy, policy_forward
 from matplotlib import pyplot as plt
-import imageio
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from crl_kino.env import DifferentialDriveGym
+from crl_kino.policy.rl_policy import load_policy, policy_forward
+from crl_kino.env.dubin_gym import DubinGym, DubinGymCU
 
 import os
 import gym
@@ -60,8 +58,8 @@ def gym_make():
     
     obs_list_list = pickle.load(open(os.path.dirname(
         __file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))
-    training_env = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/training_env.pkl', 'rb'))
-    env = DifferentialDriveGym(obs_list_list=[training_env])
+    training_env = pickle.load(open(os.path.dirname(__file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
+    env = DubinGymCU()
 
     return env
 

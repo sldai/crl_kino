@@ -7,9 +7,8 @@
 import pickle
 from crl_kino.policy.rl_policy import load_policy, policy_forward
 from matplotlib import pyplot as plt
-import imageio
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from crl_kino.env import DifferentialDriveGym
+
+from crl_kino.env.dubin_gym import DubinGym
 
 import os
 import gym
@@ -59,8 +58,8 @@ def get_args():
 def gym_make():
     
     obs_list_list = pickle.load(open(os.path.dirname(
-        __file__)+'/../data/obstacles/obs_list_list.pkl', 'rb'))
-    env = DifferentialDriveGym(obs_list_list=obs_list_list)
+        __file__)+'/../data/obstacles/test_env2.pkl', 'rb'))
+    env = DubinGym(obs_list_list=[obs_list_list])
 
     return env
 
@@ -69,7 +68,7 @@ def train(args=get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
     env = gym_make()
     args.local_map_shape = env.observation_space[0].shape
-    args.output_size = 500
+    args.output_size = 64
     args.state_shape = env.observation_space[1].shape
     args.action_shape = env.action_space.shape or env.action_space.n
     args.action_range = [env.action_space.low, env.action_space.high]
@@ -88,7 +87,7 @@ def train(args=get_args()):
     conv = Conv(input_size=args.local_map_shape, output_size=args.output_size)
 
     actor = Actor(
-        args.layer, args.state_shape+args.output_size, args.action_shape,
+        args.layer, args.state_shape[0]+args.output_size, args.action_shape,
         args.action_range, args.device
     ).to(args.device)
 
@@ -96,10 +95,11 @@ def train(args=get_args()):
 
     actor_optim = torch.optim.Adam(actor.parameters(), lr=args.actor_lr)
 
+    conv_ = conv = Conv(input_size=args.local_map_shape, output_size=args.output_size)
     critic = Critic(
-        args.layer, args.state_shape+args.output_size, args.action_shape, args.device
+        args.layer, args.state_shape[0]+args.output_size, args.action_shape, args.device
     ).to(args.device)
-    critic_
+    critic = CriticConv(conv_, critic)
     critic_optim = torch.optim.Adam(critic.parameters(), lr=args.critic_lr)
     policy = DDPGPolicy(
         actor, actor_optim, critic, critic_optim,
@@ -147,7 +147,6 @@ def test(args=get_args()):
     model_path = os.path.join(args.logdir, args.task, 'ddpg/policy.pth')
     env = gym_make()
     policy = load_policy(env, args.layer, model_path)
-    print(env.action_space.low, env.action_space.high)
     obs = env.reset()
 
     while True:

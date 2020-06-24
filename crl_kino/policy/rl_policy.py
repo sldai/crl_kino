@@ -1,4 +1,3 @@
-from crl_kino.env import DifferentialDriveGym
 from tianshou.data import Collector, ReplayBuffer, Batch
 import torch
 from tianshou.policy import DDPGPolicy

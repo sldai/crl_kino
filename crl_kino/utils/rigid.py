@@ -354,3 +354,7 @@ class CircleRobot(Rigid):
         return circle
 
 
+class Vehicle(RectRobot):
+    def __init__(self, d, rect, pose=np.zeros(3), color='black'):
+        super().__init__(rect, pose, color)
+        self.d = d
