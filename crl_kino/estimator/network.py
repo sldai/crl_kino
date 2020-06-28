@@ -9,6 +9,28 @@ import torch
 
 import numpy as np
 
+class TTRCU(nn.Module):
+    def __init__(self, input_size, output_size, device='cpu'):
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.Linear(input_size, 512),
+            nn.PReLU(),
+            nn.Linear(512,512),
+            nn.PReLU(),
+            nn.Linear(512,512),
+            nn.PReLU(),
+            nn.Linear(512,512),
+            nn.PReLU(),
+            nn.Linear(512,output_size)
+        )
+        self.device=device
+    def forward(self, s):
+        if not isinstance(s, torch.Tensor):
+            s = torch.tensor(s, device=self.device, dtype=torch.float)
+        s = s.view(s.shape[0],-1)
+        logits = self.model(s)
+        return logits.view(logits.shape[0])
+
 
 class EstimatorModel(nn.Module):
     

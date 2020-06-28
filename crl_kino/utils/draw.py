@@ -63,29 +63,31 @@ def plot_problem_definition(ax, obs_list, rigidrobot, start, goal):
     collection += ax_ob + start_mark + goal_mark
     return collection
 
-def draw_tree(robot_env, start, goal, tree, fname='rrt_tree'):
+def draw_tree(robot_env, start, goal, tree, vertex=True, fname='rrt_tree'):
     """
     Draw a gif of the process of RRT
     """
     fig, ax = plt.subplots(figsize=(6,6))
-    # plt.axis([robot_env.env_bounds[0,0], robot_env.env_bounds[0,1], robot_env.env_bounds[1,0], robot_env.env_bounds[1,1]])
-    plt.axis("equal")
-    plt.grid(True)
+    plt.axis([-22,22,-22,22])
+    plt.xticks([])
+    plt.yticks([])
     collection_list = [] # each entry is a collection
     tmp = plot_problem_definition(ax, robot_env.obs_list, robot_env.rigid_robot, start, goal)
     collection_list.append(tmp)
     for node in tree:
         if node.parent:
-            path = np.array(node.path[:])
-            ax_path, = plt.plot(path[:,0], path[:,1], "-g")   
-            ax_node, = plt.plot(node.state[0], node.state[1], 'x', c='black')
             tmp = tmp.copy()
+            path = np.array(node.path[:])
+            ax_path, = plt.plot(path[:,0], path[:,1], "-g", linewidth=0.6)
             tmp.append(ax_path)
-            tmp.append(ax_node)
+            if vertex:   
+                ax_node, = plt.plot(node.state[0], node.state[1], 'x', c='black', markersize=1.0)
+                tmp.append(ax_node)
             collection_list.append(tmp)
             # plt.pause(2)   
     gif = anim.ArtistAnimation(fig, collection_list, interval=50)
     gif.save(fname+'.gif', writer = anim.PillowWriter(fps=4))
+    plt.savefig(fname+'.png')
 
 def draw_path(robot_env, start, goal, path, fname='rrt_path'):
     fig, ax = plt.subplots(figsize=(6,6))
@@ -106,3 +108,6 @@ def draw_path(robot_env, start, goal, path, fname='rrt_path'):
         collection_list.append(tmp_)
     gif = anim.ArtistAnimation(fig, collection_list, interval=200)
     gif.save(fname+'.gif', writer = anim.PillowWriter(fps=5))
+
+
+

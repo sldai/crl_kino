@@ -22,7 +22,6 @@ class DubinGym(gym.Env):
     The gym wrapper for DifferentailDriveEnv
     """
     def __init__(self,
-                 robot_env=DubinEnv(),
                  obs_list_list=[]):
         """
         :param robot_env: simulation environment
@@ -109,7 +108,7 @@ class DubinGym(gym.Env):
         x2 = np.block([self.goal[:2], np.cos(
             self.goal[2]), np.sin(self.goal[2])])
         info['goal_dis'] = np.linalg.norm(x1-x2) # SE(2) distance
-        if info['goal_dis'] <= 2.0:
+        if info['goal_dis'] <= 1.5:
             info['goal'] = True
         info['clearance'] = min(self.robot_env.get_clearance(self.state), 3.0)
         info['collision'] = not self.robot_env.valid_state_check(self.state)
@@ -136,6 +135,7 @@ class DubinGym(gym.Env):
         # goal configuration in the robot coordinate frame, local map
         obs = (local_map, b_goal)
         return obs
+    
 
     @staticmethod
     def T_transform2d(aTb, bP):
@@ -155,7 +155,7 @@ class DubinGym(gym.Env):
             aP = aP_[:2, :].T
         return aP
 
-    def reset(self, low=5, high=8):
+    def reset(self, low=5, high=12):
         # assert len(self.obs_list_list) > 0, 'No training environments'
         if len(self.obs_list_list)>0:
             ind_obs = np.random.randint(0, len(self.obs_list_list))

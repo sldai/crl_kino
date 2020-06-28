@@ -129,24 +129,32 @@ def train(args=get_args()):
         result = collector.collect(n_episode=1, render=args.render)
         print(f'Final reward: {result["rew"]}, length: {result["len"]}')
         collector.close()
-
+from crl_kino.estimator.network import TTRCU
 
 def test(args=get_args()):
     torch.set_num_threads(1)  # we just need only one thread for NN
 
     model_path = os.path.join(args.logdir, args.task, 'ddpg/policy.pth')
+    
     env = gym_make()
-    policy = load_policy(env, args.layer, model_path)
-    print(env.action_space.low, env.action_space.high)
-    obs = env.reset()
 
+    policy = load_policy(env, args.layer, model_path)
+    estimator = TTRCU(env.observation_space.shape[0], 1, args.device).to(args.device)
+    estimator.load_state_dict(torch.load('log/estimator/estimator.pth', map_location=args.device))
+    obs = env.reset()
+    print(estimator.device)
+    
     while True:
-        action = policy_forward(policy, obs, eps=0.05)
-        print(action)
+        action, _ = policy.actor(obs.reshape(1,-1), eps=0)
+        action = action.detach().cpu().numpy()
+        print(obs.reshape(1,-1))
+        reward = estimator(obs.reshape(1,-1)).item()
+        # action = policy_forward(policy, obs, eps=0.05)
+        print('action: ', action, 'ttr: ', reward)
         obs, reward, done, info = env.step(action[0])
-        print(reward)
         env.render()
         if done:
+            print(env.current_time)
             break
 
 

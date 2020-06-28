@@ -174,6 +174,7 @@ class ActorProb(nn.Module):
 class Critic(nn.Module):
     def __init__(self, layer, state_shape, action_shape=0, device='cpu'):
         super().__init__()
+        
         self.device = device
         self.model = [
             nn.Linear(np.prod(state_shape) + np.prod(action_shape), layer[0]),
