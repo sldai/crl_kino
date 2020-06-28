@@ -22,6 +22,7 @@ class DubinGym(gym.Env):
     The gym wrapper for DifferentailDriveEnv
     """
     def __init__(self,
+                robot_env=DubinEnv(),
                  obs_list_list=[]):
         """
         :param robot_env: simulation environment

@@ -7,39 +7,33 @@ Now it is still in development, to install it for development:
 Notice that if you have installed tianshou, please remove it or create another virtual env to install this package. Because we use tianshou for reinforcemenr learning, and change it a bit for our use.
 
 ```
-conda create -n crl_kino python=3.6 
+conda create -n crl_kino python=3.7 
 conda activate crl_kino
-git clone https://github.com/sldai/crl_kino.git
-cd crl_kino
+# install pytorch
 conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
 pip install -e .
 ```
 
 ## Use
 
-Test:
 
 ```
-# kinodynamic RRT using dwa as steering function
-python example/test.py --case rrt
+# train a local planner
+python example/rl_training.py
 
-# kinodynamic RRT using a trained policy as steering function
+# rrt planning with the trained rl local planner
+python example/show.py --case rrt
+
+# rrtstar planning with the trained rl local planner
 python example/test.py --case rl_rrt
 ```
 
-Gif of kinodynamic rrt results will be saved in the current folder.
-
-
-Train an agent:
-
-```
-python examples/rl_training.py 
-```
+Trained models can be found in the arclab server `~/shilong/crl_kino/log`
 
 ## Results
 
-RRT tree growing process
-![path](/data/images/rrt_tree.gif)
+RRT tree
+![path](/data/images/rrt_tree.png)
 
-The final course 
-![path](/data/images/rrt_path.gif)
+RRT* tree
+![path](/data/images/rrtstar_tree.png)

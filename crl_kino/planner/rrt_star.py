@@ -30,13 +30,12 @@ class RRTStar(RRT):
             new_node_list = self.steer(parent_node, rnd_node)
 
             if len(new_node_list)>0:
-                near_nodes = self.near(new_node_list, self.goal, self.se2_metric, 1.5)
-                if len(near_nodes)>0:
+                near_node, dis= self.nearest(new_node_list, self.goal, self.se2_metric)
+                if dis<=1.5:
                     reach_exactly = True
-                    near_node = min(near_nodes, key=lambda node: node.cost)
                     if best_node == None or near_node.cost<best_node.cost:
                         best_node = near_node
-                    print('Path length: {}'.format(best_node.cost))
+                    print('Time to reach: {}'.format(best_node.cost))
         if best_node == None:
             best_node, dis = self.self.nearest(self.node_list, self.goal, self.se2_metric)
         path = self.generate_final_course(best_node)
@@ -61,42 +60,3 @@ class RRTStar(RRT):
             min_ind = np.argmin(costs)
             parent_node, min_h_cost = near_nodes[min_ind], costs[min_ind]
         return parent_node
-
-if __name__ == "__main__":
-    import pickle, os
-    from crl_kino.estimator.network import TTRCU
-    import torch
-    from crl_kino.env.dubin_env import DubinEnv
-    from crl_kino.env.dubin_gym import DubinGym, DubinGymCU
-    from crl_kino.policy.rl_policy import policy_forward, load_policy
-    from crl_kino.utils.draw import *
-    # test_env1 = pickle.load(open('data/obstacles/test_env1.pkl', 'rb'))
-    # start = np.array([-5, -15, 0, 0, 0.0])
-    # goal = np.array([10, 10, 0, 0, 0.0])
-
-    test_env2 = pickle.load(open('data/obstacles/test_env2.pkl', 'rb'))
-    start = np.array([-15.0,17,0])
-    goal = np.array([10.8,-8.5,0])
-
-    # robot_env
-    env, gym = DubinEnv(), DubinGymCU()
-    env.set_obs(test_env2)
-
-    # policy
-    model_path = os.path.join('log', 'dubin', 'ddpg/policy.pth')
-    policy = load_policy(gym, [1024, 512, 512, 512], model_path)
-
-    # ttr_estimator
-    estimator = TTRCU(gym.observation_space.shape[0], 1, 'cpu').to('cpu')
-    estimator.load_state_dict(torch.load('log/estimator/estimator.pth', map_location='cpu'))
-
-    # planner = RRTStar(env, policy=policy, ttr_estimator=estimator, max_iter=1000)
-
-    # planner.set_start_and_goal(start, goal)
-
-    # path = planner.planning()
-
-    planner = pickle.load(open('rrt.pkl', 'rb'))
-    draw_path(env, start, goal, planner.path, fname='rrt_path')
-    draw_tree(env, start, goal, planner.node_list, fname='rrt_tree')
-    # pickle.dump(planner, open('rrtstar.pkl', 'wb'))
